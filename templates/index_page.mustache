@@ -1,0 +1,239 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template tool_moodleclone/index_page
+
+    Moodle Clone admin page: source information, checks, backup status and packages.
+
+    Context variables required for this template:
+    * sourceinfo - array of {label, value}
+    * extensions - array of {name, loaded}
+    * checks - array of {message, statuslabel, badge}
+    * hasactive, active - the pending or running job (see jobs for fields)
+    * cancreate - whether the create button is enabled
+    * hasjobs, jobs - recent jobs: {id, statuslabel, badge, ispending, isrunning, cancelrequested, stalled,
+      currentstep, progress, steps, requester, origin, timecreated, timestarted, timemodified, timefinished,
+      filename, size, sha256, error, errorstep, downloadurl, downloadchecksumurl, downloadproblem, deletable, protection}
+    * actionurl, sesskey - form target and session key
+    * clicommand - CLI command for large sites
+    * lastcron - last cron start
+    * workerready, workermessage, needscronsetup, crontab, cronline - whether cron will run queued jobs, and how to fix it
+    * installerdownloadurl - link to download the standalone restore installer
+    * minpasswordlength - shortest installer password the create form accepts
+    * jobs[].protection - how the package's installer is protected (label), empty when unknown
+
+    Example context (json):
+    {
+        "sourceinfo": [{"label": "Moodle version", "value": "4.1 (Build: 20221128) (2022112800)"}],
+        "extensions": [{"name": "zip", "loaded": true}],
+        "checks": [{"message": "All required PHP extensions are loaded.", "statuslabel": "OK", "badge": "success"}],
+        "hasactive": true,
+        "active": {"id": 3, "statuslabel": "Running", "badge": "info", "isrunning": true, "currentstep": "Collecting Moodledata",
+            "progress": 47, "timestarted": "Thursday, 24 September 2026, 1:00 PM", "timemodified": "Thursday, 24 September 2026, 1:05 PM",
+            "steps": [{"label": "Collecting Moodle files", "statuslabel": "Completed", "badge": "success", "progress": 100}]},
+        "cancreate": false,
+        "hasjobs": true,
+        "jobs": [{"id": 2, "statuslabel": "Completed", "badge": "success", "timecreated": "Wednesday, 23 September 2026",
+            "requester": "Admin User", "origin": "Web", "size": "1.2 GB", "sha256": "abc", "filename": "moodle-clone-2026-09-23-100000.zip",
+            "downloadurl": "https://example.com/admin/tool/moodleclone/download.php?id=2&sesskey=x", "deletable": true}],
+        "actionurl": "https://example.com/admin/tool/moodleclone/index.php",
+        "sesskey": "abc123",
+        "clicommand": "php admin/tool/moodleclone/cli/backup.php --execute",
+        "lastcron": "Thursday, 24 September 2026, 1:04 PM",
+        "workerready": false,
+        "needscronsetup": true,
+        "workermessage": "Moodle's cron has not run since Wednesday, 9 October 2024.",
+        "crontab": "sudo crontab -u www-data -e",
+        "cronline": "* * * * * /usr/bin/php /var/www/moodle/admin/cli/cron.php >/dev/null 2>&1",
+        "installerdownloadurl": "https://example.com/admin/tool/moodleclone/installer-download.php?sesskey=x",
+        "minpasswordlength": 12
+    }
+}}
+<p class="lead">{{#str}} intro, tool_moodleclone {{/str}}</p>
+
+<h3>{{#str}} backupstatus, tool_moodleclone {{/str}}</h3>
+{{#hasactive}}{{#active}}
+<div class="card mb-3">
+    <div class="card-body">
+        <dl class="row mb-2">
+            <dt class="col-sm-3">{{#str}} status, tool_moodleclone {{/str}}</dt>
+            <dd class="col-sm-9"><span class="badge badge-{{badge}}">{{statuslabel}}</span>
+                {{#cancelrequested}}<span class="badge badge-warning ml-1">{{#str}} cancelrequested, tool_moodleclone {{/str}}</span>{{/cancelrequested}}</dd>
+            {{#isrunning}}
+            <dt class="col-sm-3">{{#str}} currentstep, tool_moodleclone {{/str}}</dt>
+            <dd class="col-sm-9">{{currentstep}}</dd>
+            <dt class="col-sm-3">{{#str}} progress, tool_moodleclone {{/str}}</dt>
+            <dd class="col-sm-9">
+                <div class="progress" style="height: 1.5rem;">
+                    <div class="progress-bar" role="progressbar" style="width: {{progress}}%;" aria-valuenow="{{progress}}"
+                        aria-valuemin="0" aria-valuemax="100">{{progress}}%</div>
+                </div>
+            </dd>
+            <dt class="col-sm-3">{{#str}} started, tool_moodleclone {{/str}}</dt>
+            <dd class="col-sm-9">{{timestarted}}</dd>
+            <dt class="col-sm-3">{{#str}} lastupdate, tool_moodleclone {{/str}}</dt>
+            <dd class="col-sm-9">{{timemodified}}</dd>
+            {{/isrunning}}
+        </dl>
+        {{#ispending}}
+        <p><strong>{{#str}} waitingforworker, tool_moodleclone {{/str}}</strong></p>
+        {{#workerready}}<p>{{#str}} pendinginfo, tool_moodleclone, {{lastcron}} {{/str}}</p>{{/workerready}}
+        {{^workerready}}
+        <div class="alert alert-danger">
+            <p>{{#str}} pendingblocked, tool_moodleclone {{/str}}</p>
+            <p class="mb-1">{{workermessage}}</p>
+            {{#needscronsetup}}
+            <p class="mb-1">{{#str}} cronsetup, tool_moodleclone {{/str}}</p>
+            <pre class="mb-1"><code>{{crontab}}</code></pre>
+            <pre class="mb-0"><code>{{cronline}}</code></pre>
+            {{/needscronsetup}}
+        </div>
+        {{/workerready}}
+        {{/ispending}}
+        {{#stalled}}<div class="alert alert-warning">{{#str}} stalled, tool_moodleclone {{/str}}</div>{{/stalled}}
+        {{#isrunning}}
+        <table class="table table-sm generaltable">
+            <tbody>
+                {{#steps}}
+                <tr><td>{{label}}</td><td><span class="badge badge-{{badge}}">{{statuslabel}}</span></td><td class="text-right">{{progress}}%</td></tr>
+                {{/steps}}
+            </tbody>
+        </table>
+        {{/isrunning}}
+        {{^cancelrequested}}
+        <form method="post" action="{{actionurl}}">
+            <input type="hidden" name="sesskey" value="{{sesskey}}">
+            <input type="hidden" name="action" value="cancel">
+            <input type="hidden" name="id" value="{{id}}">
+            <button type="submit" class="btn btn-secondary">{{#str}} cancelbackup, tool_moodleclone {{/str}}</button>
+        </form>
+        {{/cancelrequested}}
+    </div>
+</div>
+{{/active}}{{/hasactive}}
+{{^hasactive}}
+<p>{{#str}} noactive, tool_moodleclone {{/str}}</p>
+{{/hasactive}}
+
+<form method="post" action="{{actionurl}}" class="mb-2" autocomplete="off">
+    <input type="hidden" name="sesskey" value="{{sesskey}}">
+    <input type="hidden" name="action" value="create">
+    <fieldset class="mb-3">
+        <legend class="h6">{{#str}} installerprotection, tool_moodleclone {{/str}}</legend>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="installerprotection" id="mc-protect-password" value="password" checked>
+            <label class="form-check-label" for="mc-protect-password">{{#str}} installerprotection_password, tool_moodleclone {{/str}}</label>
+            <div class="form-text text-muted small">{{#str}} installerprotection_password_help, tool_moodleclone {{/str}}</div>
+        </div>
+        <div class="ml-4 mb-2">
+            <div class="form-group mb-1">
+                <label for="mc-installer-password" class="mb-0">{{#str}} installerpassword, tool_moodleclone {{/str}}</label>
+                <input type="password" class="form-control" style="max-width: 24rem;" id="mc-installer-password"
+                    name="installerpassword" autocomplete="new-password" spellcheck="false" maxlength="256">
+            </div>
+            <div class="form-group mb-1">
+                <label for="mc-installer-password2" class="mb-0">{{#str}} installerpassword2, tool_moodleclone {{/str}}</label>
+                <input type="password" class="form-control" style="max-width: 24rem;" id="mc-installer-password2"
+                    name="installerpassword2" autocomplete="new-password" spellcheck="false" maxlength="256">
+            </div>
+            <div class="form-text text-muted small">{{#str}} installerpasswordinfo, tool_moodleclone, {{minpasswordlength}} {{/str}}</div>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="installerprotection" id="mc-protect-keyfile" value="keyfile">
+            <label class="form-check-label" for="mc-protect-keyfile">{{#str}} installerprotection_keyfile, tool_moodleclone {{/str}}</label>
+            <div class="form-text text-muted small">{{#str}} installerprotection_keyfile_help, tool_moodleclone {{/str}}</div>
+        </div>
+    </fieldset>
+    <button type="submit" class="btn btn-primary" {{^cancreate}}disabled{{/cancreate}}>{{#str}} createpackage, tool_moodleclone {{/str}}</button>
+</form>
+<p class="text-muted small">{{#str}} createinfo, tool_moodleclone {{/str}} <code>{{clicommand}}</code></p>
+
+<h3>{{#str}} packages, tool_moodleclone {{/str}}</h3>
+{{#hasjobs}}
+<div class="table-responsive">
+<table class="table table-sm generaltable">
+    <thead>
+        <tr>
+            <th scope="col">{{#str}} created, tool_moodleclone {{/str}}</th>
+            <th scope="col">{{#str}} status, tool_moodleclone {{/str}}</th>
+            <th scope="col">{{#str}} requestedby, tool_moodleclone {{/str}}</th>
+            <th scope="col">{{#str}} package, tool_moodleclone {{/str}}</th>
+            <th scope="col">{{#str}} actions, tool_moodleclone {{/str}}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#jobs}}
+        <tr>
+            <td>{{timecreated}}</td>
+            <td><span class="badge badge-{{badge}}">{{statuslabel}}</span>
+                {{#error}}<div class="small text-danger text-break">{{#errorstep}}{{errorstep}}: {{/errorstep}}{{error}}</div>{{/error}}</td>
+            <td>{{requester}} <span class="text-muted small">({{origin}})</span></td>
+            <td class="text-break">{{#filename}}{{filename}}<br>{{/filename}}{{#size}}{{size}}<br>{{/size}}
+                {{#sha256}}<span class="small text-muted">SHA-256: <code>{{sha256}}</code></span><br>{{/sha256}}
+                {{#protection}}<span class="small text-muted">{{#str}} protection, tool_moodleclone {{/str}}: {{protection}}</span>{{/protection}}
+                {{#downloadproblem}}<div class="small text-danger">{{downloadproblem}}</div>{{/downloadproblem}}</td>
+            <td>
+                {{#downloadurl}}<a class="btn btn-sm btn-primary mb-1" href="{{downloadurl}}">{{#str}} download, tool_moodleclone {{/str}}</a>{{/downloadurl}}
+                {{#downloadchecksumurl}}<a class="btn btn-sm btn-outline-secondary mb-1" href="{{downloadchecksumurl}}">{{#str}} downloadchecksum, tool_moodleclone {{/str}}</a>{{/downloadchecksumurl}}
+                {{#deletable}}
+                <form method="post" action="{{actionurl}}" class="d-inline">
+                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="id" value="{{id}}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger mb-1">{{#str}} delete, tool_moodleclone {{/str}}</button>
+                </form>
+                {{/deletable}}
+            </td>
+        </tr>
+        {{/jobs}}
+    </tbody>
+</table>
+</div>
+{{/hasjobs}}
+{{^hasjobs}}<p>{{#str}} nojobs, tool_moodleclone {{/str}}</p>{{/hasjobs}}
+<p><a class="btn btn-outline-secondary btn-sm" href="{{installerdownloadurl}}">{{#str}} installerdownload, tool_moodleclone {{/str}}</a></p>
+<p class="text-muted small">{{#str}} installerdownloadinfo, tool_moodleclone {{/str}}</p>
+
+<h3>{{#str}} preflight, tool_moodleclone {{/str}}</h3>
+<ul class="list-unstyled">
+    {{#checks}}
+    <li class="mb-1"><span class="badge badge-{{badge}} mr-2">{{statuslabel}}</span>{{message}}</li>
+    {{/checks}}
+</ul>
+
+<h3>{{#str}} sourceinformation, tool_moodleclone {{/str}}</h3>
+<table class="table table-sm generaltable">
+    <tbody>
+        {{#sourceinfo}}
+        <tr>
+            <th scope="row" class="w-25">{{label}}</th>
+            <td class="text-break">{{value}}</td>
+        </tr>
+        {{/sourceinfo}}
+        <tr>
+            <th scope="row" class="w-25">{{#str}} info:extensions, tool_moodleclone {{/str}}</th>
+            <td>
+                {{#extensions}}
+                <span class="badge {{#loaded}}badge-success{{/loaded}}{{^loaded}}badge-secondary{{/loaded}} mr-1">
+                    {{name}}
+                    <span class="sr-only">{{#loaded}}{{#str}} loaded, tool_moodleclone {{/str}}{{/loaded}}{{^loaded}}{{#str}} notloaded, tool_moodleclone {{/str}}{{/loaded}}</span>
+                </span>
+                {{/extensions}}
+            </td>
+        </tr>
+    </tbody>
+</table>
