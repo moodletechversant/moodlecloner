@@ -43,7 +43,6 @@ use tool_moodleclone\local\package\workspace;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class finaliser implements step {
-
     /**
      * The stage this step performs.
      *
@@ -74,12 +73,12 @@ class finaliser implements step {
             throw new \coding_exception('The archive must be finished before it is published');
         }
 
-        $verifier = new package_verifier(function(float $fraction) use ($state) {
+        $verifier = new package_verifier(function (float $fraction) use ($state) {
             $state->progress($fraction * 0.7);
         });
         $verifier->verify($temp, $state->zip->get_entry_count());
 
-        $sha256 = package_verifier::hash_file($temp, function(float $fraction) use ($state) {
+        $sha256 = package_verifier::hash_file($temp, function (float $fraction) use ($state) {
             $state->progress(0.7 + $fraction * 0.3);
         });
         clearstatcache(true, $temp);
@@ -101,8 +100,10 @@ class finaliser implements step {
         }
 
         $sidecartemp = $state->workdir . '/package.sha256.part';
-        if (file_put_contents($sidecartemp, $sha256 . '  ' . $filename . "\n") === false ||
-                !@rename($sidecartemp, $final . workspace::SIDECAR_SUFFIX)) {
+        if (
+            file_put_contents($sidecartemp, $sha256 . '  ' . $filename . "\n") === false ||
+                !@rename($sidecartemp, $final . workspace::SIDECAR_SUFFIX)
+        ) {
             throw new backup_exception('publishfailed', $filename . workspace::SIDECAR_SUFFIX);
         }
         @chmod($final . workspace::SIDECAR_SUFFIX, 0600);

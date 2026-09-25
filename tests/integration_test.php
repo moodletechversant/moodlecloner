@@ -50,7 +50,6 @@ require_once(__DIR__ . '/fixtures/fixture_helper.php');
  * @covers     \tool_moodleclone\local\package\package_download
  */
 class integration_test extends \advanced_testcase {
-
     /**
      * Fixture site; the task's runner archives it instead of the real code tree.
      *

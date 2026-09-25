@@ -28,7 +28,6 @@ use tool_moodleclone\local\environment\snapshot;
  * @covers     \tool_moodleclone\local\backup\preflight
  */
 class preflight_test extends \advanced_testcase {
-
     /**
      * A snapshot describing a healthy server.
      *
@@ -59,8 +58,10 @@ class preflight_test extends \advanced_testcase {
 
     public function test_healthy_server_with_complete_pipeline(): void {
         $results = (new preflight($this->healthy_snapshot(), new manager([])))->run();
-        $this->assertSame(['extensions', 'dirroot', 'dataroot', 'database', 'diskspace', 'pipeline'],
-            array_column($results, 'check'));
+        $this->assertSame(
+            ['extensions', 'dirroot', 'dataroot', 'database', 'diskspace', 'pipeline'],
+            array_column($results, 'check')
+        );
         $this->assertSame(['ok'], array_values(array_unique(array_column($results, 'status'))));
         $this->assertFalse(preflight::has_errors($results));
     }
@@ -100,6 +101,9 @@ class preflight_test extends \advanced_testcase {
 
     public function test_incomplete_pipeline_is_an_error(): void {
         $stub = new class extends step\not_implemented_step {
+            /**
+             * Get the stage this step implements.
+             */
             public function get_stage(): string {
                 return stage::DATABASE;
             }
@@ -143,7 +147,7 @@ class preflight_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function disk_provider(): array {
+    public static function disk_provider(): array {
         return [
             'enough' => [2000, 1000, preflight::OK],
             'insufficient' => [999, 1000, preflight::ERROR],
@@ -174,8 +178,14 @@ class preflight_test extends \advanced_testcase {
 
         if (function_exists('symlink') && DIRECTORY_SEPARATOR === '/') {
             symlink(make_request_directory(), $base);
-            $results = $this->by_check((new preflight($this->healthy_snapshot(), new manager([]), null, null, null,
-                $base))->run());
+            $results = $this->by_check((new preflight(
+                $this->healthy_snapshot(),
+                new manager([]),
+                null,
+                null,
+                null,
+                $base
+            ))->run());
             $this->assertSame(preflight::ERROR, $results['workspace']['status']);
         }
     }

@@ -24,7 +24,6 @@ namespace tool_moodleclone\local\backup\progress;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class multi_reporter implements reporter {
-
     /** @var reporter[] */
     private $reporters;
 

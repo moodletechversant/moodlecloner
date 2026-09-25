@@ -26,7 +26,6 @@ use tool_moodleclone\local\backup\options;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 interface optional_step extends step {
-
     /**
      * Whether the step is part of this backup.
      *

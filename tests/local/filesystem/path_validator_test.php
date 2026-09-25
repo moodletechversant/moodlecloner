@@ -26,13 +26,12 @@ namespace tool_moodleclone\local\filesystem;
  * @covers     \tool_moodleclone\local\filesystem\path_validator
  */
 class path_validator_test extends \advanced_testcase {
-
     /**
      * Relative paths and whether they are safe.
      *
      * @return array
      */
-    public function relative_path_provider(): array {
+    public static function relative_path_provider(): array {
         return [
             'simple file' => ['manifest.json', true],
             'nested' => ['moodle/admin/index.php', true],
@@ -134,7 +133,7 @@ class path_validator_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function link_target_provider(): array {
+    public static function link_target_provider(): array {
         return [
             'sibling' => ['vendor/bin/tool', '../tool', 'vendor/tool'],
             'same dir' => ['a/link', 'file', 'a/file'],

@@ -32,7 +32,6 @@ use tool_moodleclone\task\process_backups;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class worker_status {
-
     /** @var string Config key holding the last worker identity problem (JSON). */
     public const PROBLEM_CONFIG = 'workerproblem';
 
@@ -47,7 +46,11 @@ class worker_status {
      */
     public static function record_problem(string $message): void {
         $recorded = json_decode((string) get_config('tool_moodleclone', self::PROBLEM_CONFIG), true);
-        if (is_array($recorded) && ($recorded['message'] ?? null) === $message && ($recorded['time'] ?? 0) >= time() - 5 * MINSECS) {
+        if (
+            is_array($recorded) &&
+            ($recorded['message'] ?? null) === $message &&
+            ($recorded['time'] ?? 0) >= time() - 5 * MINSECS
+        ) {
             // The task runs every minute; avoid rewriting the same config value each time.
             return;
         }
@@ -156,12 +159,18 @@ class worker_status {
         $status = $status ?? self::get();
         $reason = self::reason($status);
         if ($reason === null) {
-            return ['check' => 'worker', 'status' => 'ok', 'message' => get_string('worker:ok', 'tool_moodleclone',
-                $status['lastcron'] ? userdate($status['lastcron']) : get_string('never'))];
+            return ['check' => 'worker', 'status' => 'ok', 'message' => get_string(
+                'worker:ok',
+                'tool_moodleclone',
+                $status['lastcron'] ? userdate($status['lastcron']) : get_string('never')
+            )];
         }
         if (self::needs_cron_setup($status)) {
-            $reason .= ' ' . get_string('worker:cronfix', 'tool_moodleclone',
-                (object) ['crontab' => $status['crontab'], 'cronline' => $status['cronline']]);
+            $reason .= ' ' . get_string(
+                'worker:cronfix',
+                'tool_moodleclone',
+                (object) ['crontab' => $status['crontab'], 'cronline' => $status['cronline']]
+            );
         }
         return ['check' => 'worker', 'status' => 'warning', 'message' => $reason];
     }

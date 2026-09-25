@@ -30,7 +30,6 @@ use tool_moodleclone\local\package\workspace;
  * @covers     \tool_moodleclone\local\job\queue
  */
 class queue_test extends \advanced_testcase {
-
     public function test_only_one_active_job(): void {
         $this->resetAfterTest();
         $first = queue::create(2, job::ORIGIN_WEB, new options());

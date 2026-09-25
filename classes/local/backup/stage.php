@@ -26,7 +26,6 @@ namespace tool_moodleclone\local\backup;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class stage {
-
     /** @var string Size estimate and environment checks, before any file is written. */
     public const PREFLIGHT = 'preflight';
 

@@ -34,7 +34,6 @@ use tool_moodleclone\local\package\layout;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class job extends \core\persistent {
-
     /** @var string Table. */
     public const TABLE = 'tool_moodleclone_jobs';
 
@@ -188,8 +187,15 @@ class job extends \core\persistent {
      */
     public static function get_active(): ?self {
         global $DB;
-        $records = $DB->get_records_select(self::TABLE, 'status IN (:pending, :running)',
-            ['pending' => self::STATUS_PENDING, 'running' => self::STATUS_RUNNING], 'id ASC', '*', 0, 1);
+        $records = $DB->get_records_select(
+            self::TABLE,
+            'status IN (:pending, :running)',
+            ['pending' => self::STATUS_PENDING, 'running' => self::STATUS_RUNNING],
+            'id ASC',
+            '*',
+            0,
+            1
+        );
         return $records ? new self(0, reset($records)) : null;
     }
 

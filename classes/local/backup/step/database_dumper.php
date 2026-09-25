@@ -38,7 +38,6 @@ use tool_moodleclone\local\package\manifest;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class database_dumper implements optional_step {
-
     /**
      * The stage this step performs.
      *
@@ -84,7 +83,7 @@ class database_dumper implements optional_step {
 
             $stream = $state->zip->open_stream(layout::DATABASE, false, 0600, $state->snapshottime);
             $sink = new gzip_sink([$stream, 'write']);
-            $info = $dumper->dump($sink, function(float $fraction) use ($state) {
+            $info = $dumper->dump($sink, function (float $fraction) use ($state) {
                 $state->progress($fraction);
             });
             $sink->close();

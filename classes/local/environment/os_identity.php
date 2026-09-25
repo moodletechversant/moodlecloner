@@ -37,7 +37,6 @@ namespace tool_moodleclone\local\environment;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class os_identity {
-
     /**
      * Whether OS users can be determined here.
      *

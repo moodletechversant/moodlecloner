@@ -27,7 +27,6 @@ namespace tool_moodleclone\local\database;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class gzip_sink implements sink {
-
     /** @var int Buffer size before compressing. */
     private const BUFFER = 1048576;
 

@@ -28,7 +28,6 @@ namespace tool_moodleclone\local\backup;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class source_paths {
-
     /** @var string[] $CFG settings that hold regenerable or runtime data, excluded wherever they live. */
     public const RUNTIME_SETTINGS = ['tempdir', 'cachedir', 'localcachedir', 'backuptempdir', 'trashdir'];
 

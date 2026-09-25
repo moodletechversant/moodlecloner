@@ -50,7 +50,6 @@ use tool_moodleclone\local\package\vanished_file_exception;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class dataroot_collector extends tree_collector {
-
     /** @var int Seconds of margin before the snapshot time for trash recovery. */
     public const TRASH_MARGIN = 60;
 
@@ -85,22 +84,38 @@ class dataroot_collector extends tree_collector {
         $done = 0;
         $total = (int) ($state->estimate[manifest::CONTENT_MOODLEDATA]['bytes'] ?? 0);
         $policy = content_policy::for_site_dataroot($sources);
-        $isfiledir = function(string $relative): bool {
+        $isfiledir = function (string $relative): bool {
             return $relative === 'filedir' || strpos($relative, 'filedir/') === 0;
         };
 
-        $this->collect_tree($state, $sources->dataroot, layout::DATA_DIR, $policy->get_filter(),
-            function(string $relative) use ($isfiledir) {
+        $this->collect_tree(
+            $state,
+            $sources->dataroot,
+            layout::DATA_DIR,
+            $policy->get_filter(),
+            function (string $relative) use ($isfiledir) {
                 return !$isfiledir($relative);
-            }, $stats, $total, $done);
+            },
+            $stats,
+            $total,
+            $done
+        );
 
         if ($sources->customfiledir) {
             $state->zip->add_directory(layout::DATA_DIR . '/filedir', 0700, time());
             $stats['directories']++;
-            $this->collect_tree($state, $sources->filedir, layout::DATA_DIR . '/filedir', null,
-                function() {
+            $this->collect_tree(
+                $state,
+                $sources->filedir,
+                layout::DATA_DIR . '/filedir',
+                null,
+                function () {
                     return false;
-                }, $stats, $total, $done);
+                },
+                $stats,
+                $total,
+                $done
+            );
         }
 
         if ($state->snapshottime !== null && $sources->trashdir !== null) {
@@ -124,7 +139,7 @@ class dataroot_collector extends tree_collector {
         }
         $threshold = $state->snapshottime - self::TRASH_MARGIN;
         $recovered = 0;
-        $walker = new tree_walker($sources->trashdir, null, function() {
+        $walker = new tree_walker($sources->trashdir, null, function () {
             // Trash entries vanish when Moodle recovers or purges them; nothing to report.
         });
         foreach ($walker->walk() as $entry) {

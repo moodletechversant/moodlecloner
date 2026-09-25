@@ -41,7 +41,6 @@ use tool_moodleclone\local\log\logger;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class manager {
-
     /** @var step[] */
     private $steps;
 
@@ -118,8 +117,12 @@ class manager {
      */
     public function run(backup_state $state): void {
         if (!$this->is_available()) {
-            throw new \moodle_exception('error:backupnotavailable', 'tool_moodleclone', '',
-                implode(', ', $this->get_unavailable_stages()));
+            throw new \moodle_exception(
+                'error:backupnotavailable',
+                'tool_moodleclone',
+                '',
+                implode(', ', $this->get_unavailable_stages())
+            );
         }
         if ($state->options->is_empty()) {
             throw new \moodle_exception('error:nothingselected', 'tool_moodleclone');
@@ -144,8 +147,11 @@ class manager {
                 // Reporters and the logger redact, so the message is safe to record.
                 $message = backup_exception::describe($e);
                 $state->reporter->step_failed($stage, $message);
-                $state->logger->log(logger::ERROR, get_string('stagefailed', 'tool_moodleclone',
-                    ['stage' => $stage, 'message' => $message]));
+                $state->logger->log(logger::ERROR, get_string(
+                    'stagefailed',
+                    'tool_moodleclone',
+                    ['stage' => $stage, 'message' => $message]
+                ));
                 throw $e;
             }
             $state->reporter->step_completed($stage);

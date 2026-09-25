@@ -45,7 +45,6 @@ require_once(__DIR__ . '/../../fixtures/fixture_helper.php');
  * @covers     \tool_moodleclone\local\backup\step\finaliser
  */
 class runner_test extends \advanced_testcase {
-
     /** @var string */
     private $dirroot;
 
@@ -180,7 +179,7 @@ class runner_test extends \advanced_testcase {
         }
         $sink = $this->redirectEvents();
         $runner = $this->runner();
-        $runner->set_db_connector(function() {
+        $runner->set_db_connector(function () {
             throw new backup_exception('dbconnect', null, "Access denied for user 'secretuser'@'localhost'");
         });
 
@@ -211,7 +210,7 @@ class runner_test extends \advanced_testcase {
 
     public function test_cancellation_stops_and_cleans_up(): void {
         $runner = $this->runner();
-        $runner->set_stop_check(function() {
+        $runner->set_stop_check(function () {
             return true;
         });
 

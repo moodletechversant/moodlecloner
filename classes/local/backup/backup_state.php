@@ -36,7 +36,6 @@ use tool_moodleclone\local\package\zip_writer;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_state {
-
     /** @var int Minimum seconds between cancellation checks. */
     private const CANCEL_CHECK_INTERVAL = 5;
 
@@ -169,7 +168,10 @@ class backup_state {
      */
     public function warn(string $code, string $name): void {
         $this->warnings++;
-        $this->logger->log(logger::WARNING, get_string('warning:' . $code, 'tool_moodleclone',
-            backup_exception::printable($name)));
+        $this->logger->log(logger::WARNING, get_string(
+            'warning:' . $code,
+            'tool_moodleclone',
+            backup_exception::printable($name)
+        ));
     }
 }

@@ -30,7 +30,6 @@ use tool_moodleclone\local\filesystem\path_validator;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class checksums implements \Countable {
-
     /** @var string hash() algorithm name. */
     public const ALGORITHM = 'sha256';
 

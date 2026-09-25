@@ -41,7 +41,6 @@ use tool_moodleclone\local\filesystem\tree_walker;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class size_estimator {
-
     /** @var int Per-entry overhead. */
     public const ENTRY_OVERHEAD = 1024;
 
@@ -120,15 +119,19 @@ class size_estimator {
     public function estimate(source_paths $paths, options $options, \moodle_database $db, string $workspacebase): array {
         $estimate = ['moodle' => null, 'moodledata' => null, 'database' => null];
         if ($options->includecode) {
-            $estimate['moodle'] = $this->estimate_tree($paths->dirroot,
-                content_policy::for_site_code($paths)->get_filter());
+            $estimate['moodle'] = $this->estimate_tree(
+                $paths->dirroot,
+                content_policy::for_site_code($paths)->get_filter()
+            );
         }
         if ($options->includedataroot) {
             $data = $this->estimate_tree($paths->dataroot, content_policy::for_site_dataroot($paths)->get_filter());
             if ($paths->customfiledir) {
-                foreach ($this->estimate_tree($paths->filedir, function() {
-                    return true;
-                }) as $key => $value) {
+                foreach (
+                    $this->estimate_tree($paths->filedir, function () {
+                        return true;
+                    }) as $key => $value
+                ) {
                     $data[$key] += $value;
                 }
             }

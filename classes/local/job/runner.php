@@ -58,7 +58,6 @@ use tool_moodleclone\local\package\zip_writer;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class runner {
-
     /** @var string Lock type (frankenstyle). */
     public const LOCK_TYPE = 'tool_moodleclone';
 
@@ -345,8 +344,10 @@ class runner {
         $checks = (new preflight($snapshot, $manager, $estimate, $options, null, $this->workspace->get_base()))->run();
         foreach ($checks as $check) {
             if ($check['status'] !== preflight::OK) {
-                $this->logger->log($check['status'] === preflight::ERROR ? logger::ERROR : logger::WARNING,
-                    $check['message']);
+                $this->logger->log(
+                    $check['status'] === preflight::ERROR ? logger::ERROR : logger::WARNING,
+                    $check['message']
+                );
             }
         }
         if (preflight::has_errors($checks)) {
@@ -362,12 +363,12 @@ class runner {
         $state->dumptables = $this->dumptables;
         $state->reporter = new multi_reporter([new job_reporter($id, job_reporter::weights($estimate)),
             $this->extrareporter]);
-        $state->cancelcheck = function() use ($id) {
+        $state->cancelcheck = function () use ($id) {
             // Ctrl-C/SIGTERM on cron.php, scheduled_task.php or cli/backup.php (core graceful-exit API).
             return queue::is_cancel_requested($id) || \core\local\cli\shutdown::should_gracefully_exit() ||
                 ($this->stopcheck !== null && ($this->stopcheck)());
         };
-        $state->onpackagename = function(string $filename) use ($id) {
+        $state->onpackagename = function (string $filename) use ($id) {
             global $DB;
             $DB->set_field(job::TABLE, 'filename', $filename, ['id' => $id]);
         };

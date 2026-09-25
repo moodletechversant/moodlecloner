@@ -46,7 +46,6 @@ use tool_moodleclone\local\filesystem\path_validator;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class workspace {
-
     /** @var string Directory name inside dataroot. */
     public const BASE = 'moodleclone';
 

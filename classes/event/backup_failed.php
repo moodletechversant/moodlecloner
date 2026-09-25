@@ -24,7 +24,6 @@ namespace tool_moodleclone\event;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_failed extends job_event {
-
     /**
      * Initialise.
      *
@@ -50,6 +49,7 @@ class backup_failed extends job_event {
      * @return string
      */
     public function get_description() {
-        return "Moodle Clone backup job '{$this->objectid}' ended with status '" . s($this->other['status'] ?? 'failed') . "' in stage '" . s($this->other['stage'] ?? '') . "'.";
+        return "Moodle Clone backup job '{$this->objectid}' ended with status '" .
+            s($this->other['status'] ?? 'failed') . "' in stage '" . s($this->other['stage'] ?? '') . "'.";
     }
 }

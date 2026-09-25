@@ -36,7 +36,6 @@ use tool_moodleclone\local\job\worker_status;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class process_backups extends \core\task\scheduled_task {
-
     /**
      * Task name.
      *
@@ -69,8 +68,11 @@ class process_backups extends \core\task\scheduled_task {
             $runner->recover_interrupted();
             $job = $runner->run_next();
             if ($job !== null) {
-                mtrace(get_string('task:finished', 'tool_moodleclone',
-                    ['id' => $job->get('id'), 'status' => $job->get('status')]));
+                mtrace(get_string(
+                    'task:finished',
+                    'tool_moodleclone',
+                    ['id' => $job->get('id'), 'status' => $job->get('status')]
+                ));
             }
         } finally {
             $lock->release();

@@ -26,7 +26,6 @@ namespace tool_moodleclone\local\package;
  * @covers     \tool_moodleclone\local\package\installer_auth
  */
 class installer_auth_test extends \basic_testcase {
-
     /** @var string A password used throughout. */
     private const PASSWORD = 'correct horse battery staple';
 
@@ -34,7 +33,16 @@ class installer_auth_test extends \basic_testcase {
         $auth = installer_auth::from_password(self::PASSWORD);
         $this->assertTrue($auth->is_password());
         $this->assertTrue($auth->verify(self::PASSWORD));
-        foreach (['', 'wrong', self::PASSWORD . ' ', ' ' . self::PASSWORD, strtoupper(self::PASSWORD), substr(self::PASSWORD, 1)] as $wrong) {
+        foreach (
+            [
+                '',
+                'wrong',
+                self::PASSWORD . ' ',
+                ' ' . self::PASSWORD,
+                strtoupper(self::PASSWORD),
+                substr(self::PASSWORD, 1),
+            ] as $wrong
+        ) {
             $this->assertFalse($auth->verify($wrong), "'{$wrong}' must not verify");
         }
     }
@@ -60,8 +68,14 @@ class installer_auth_test extends \basic_testcase {
             $this->assertStringNotContainsString(base64_encode(hash($algo, self::PASSWORD, true)), $json);
         }
         // An independent computation of the documented KDF reproduces the verifier.
-        $this->assertSame(base64_decode($data['verifier'], true), hash_pbkdf2('sha256', self::PASSWORD,
-            base64_decode($data['salt'], true), $data['iterations'], 32, true));
+        $this->assertSame(base64_decode($data['verifier'], true), hash_pbkdf2(
+            'sha256',
+            self::PASSWORD,
+            base64_decode($data['salt'], true),
+            $data['iterations'],
+            32,
+            true
+        ));
     }
 
     public function test_every_verifier_has_its_own_salt(): void {
@@ -87,14 +101,19 @@ class installer_auth_test extends \basic_testcase {
     }
 
     /**
+     * Passwords and confirmations, with the problems each must report.
+     *
      * @return array
      */
-    public function password_provider(): array {
+    public static function password_provider(): array {
         return [
             'fine' => [self::PASSWORD, self::PASSWORD, []],
             'exactly the minimum' => ['abcdefghijkl', 'abcdefghijkl', []],
-            'unicode counts characters, not bytes' => ["\u{00e9}\u{00e8}\u{00ea}\u{00eb}\u{00e0}\u{00e2}\u{00e4}\u{00ef}\u{00ee}\u{00f4}\u{00f6}\u{00fc}",
-                "\u{00e9}\u{00e8}\u{00ea}\u{00eb}\u{00e0}\u{00e2}\u{00e4}\u{00ef}\u{00ee}\u{00f4}\u{00f6}\u{00fc}", []],
+            'unicode counts characters, not bytes' => [
+                "\u{00e9}\u{00e8}\u{00ea}\u{00eb}\u{00e0}\u{00e2}\u{00e4}\u{00ef}\u{00ee}\u{00f4}\u{00f6}\u{00fc}",
+                "\u{00e9}\u{00e8}\u{00ea}\u{00eb}\u{00e0}\u{00e2}\u{00e4}\u{00ef}\u{00ee}\u{00f4}\u{00f6}\u{00fc}",
+                [],
+            ],
             'too short' => ['abcdefghijk', 'abcdefghijk', ['short']],
             'empty' => ['', '', ['short']],
             'mismatch' => [self::PASSWORD, self::PASSWORD . 'x', ['mismatch']],
@@ -105,6 +124,8 @@ class installer_auth_test extends \basic_testcase {
     }
 
     /**
+     * The password rules report the expected problems.
+     *
      * @dataProvider password_provider
      * @param string $password
      * @param string $confirmation
@@ -120,11 +141,13 @@ class installer_auth_test extends \basic_testcase {
     }
 
     /**
+     * Invalid installer_auth descriptions, with the message each must produce.
+     *
      * @return array
      */
-    public function invalid_description_provider(): array {
+    public static function invalid_description_provider(): array {
         $good = installer_auth::from_password(self::PASSWORD)->to_array();
-        $with = function(string $key, $value) use ($good) {
+        $with = function (string $key, $value) use ($good) {
             $data = $good;
             $data[$key] = $value;
             return $data;
@@ -137,7 +160,10 @@ class installer_auth_test extends \basic_testcase {
             'other kdf' => [$with('kdf', 'md5'), 'kdf must be'],
             'iterations as string' => [$with('iterations', '600000'), 'iterations must be an integer'],
             'iterations too few' => [$with('iterations', 1000), 'iterations must be an integer'],
-            'iterations absurd (a hostile package must not stall the server)' => [$with('iterations', 2000000000), 'iterations must be an integer'],
+            'iterations absurd (a hostile package must not stall the server)' => [
+                $with('iterations', 2000000000),
+                'iterations must be an integer',
+            ],
             'short salt' => [$with('salt', base64_encode('abc')), 'salt must be base64 of 16 bytes'],
             'salt not base64' => [$with('salt', '!!!!'), 'salt must be base64 of 16 bytes'],
             'salt not canonical' => [$with('salt', rtrim($good['salt'], '=') . "\n"), 'salt must be base64 of 16 bytes'],
@@ -147,6 +173,8 @@ class installer_auth_test extends \basic_testcase {
     }
 
     /**
+     * An invalid installer_auth description is reported and refused.
+     *
      * @dataProvider invalid_description_provider
      * @param array $data
      * @param string $message

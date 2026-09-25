@@ -46,7 +46,6 @@ use tool_moodleclone\local\filesystem\tree_entry;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class zip_writer {
-
     /** @var int Entries whose size might reach this use ZIP64 fields (margin for deflate expansion). */
     public const ZIP64_THRESHOLD = 0xF0000000;
 
@@ -213,8 +212,13 @@ class zip_writer {
      * @throws vanished_file_exception When the file no longer exists.
      * @throws backup_exception When it cannot be read or was replaced.
      */
-    public function add_file(string $name, string $path, bool $compress, ?callable $onchunk = null,
-            ?tree_entry $entry = null): array {
+    public function add_file(
+        string $name,
+        string $path,
+        bool $compress,
+        ?callable $onchunk = null,
+        ?tree_entry $entry = null
+    ): array {
         $this->require_idle();
         $in = @fopen($path, 'rb');
         if (!$in) {
@@ -269,7 +273,8 @@ class zip_writer {
     /**
      * Write data to the open stream entry.
      *
-     * @internal Use zip_entry_stream::write().
+     * Only zip_entry_stream should call this; use zip_entry_stream::write() instead.
+     *
      * @param string $data
      * @return void
      */
@@ -283,7 +288,8 @@ class zip_writer {
     /**
      * Close the open stream entry.
      *
-     * @internal Use zip_entry_stream::close().
+     * Only zip_entry_stream should call this; use zip_entry_stream::close() instead.
+     *
      * @return array
      */
     public function stream_close(): array {
@@ -312,8 +318,19 @@ class zip_writer {
         $zip64 = $this->forcezip64 || $this->entries >= self::MAX16 || $cdoffset >= self::MAX32 || $cdsize >= self::MAX32;
         if ($zip64) {
             $eocd64offset = $this->offset;
-            $this->write(pack('VPvvVVPPPP', 0x06064b50, 44, self::MADE_BY, 45, 0, 0,
-                $this->entries, $this->entries, $cdsize, $cdoffset));
+            $this->write(pack(
+                'VPvvVVPPPP',
+                0x06064b50,
+                44,
+                self::MADE_BY,
+                45,
+                0,
+                0,
+                $this->entries,
+                $this->entries,
+                $cdsize,
+                $cdoffset
+            ));
             $this->write(pack('VVPV', 0x07064b50, 0, $eocd64offset, 1));
         }
         $count16 = ($zip64 && ($this->forcezip64 || $this->entries >= self::MAX16)) ? self::MAX16 : $this->entries;
@@ -368,8 +385,14 @@ class zip_writer {
      * @param string|null $checkname Name to validate (directories are validated without the trailing slash).
      * @return void
      */
-    private function begin(string $name, bool $compress, int $unixmode, int $mtime, int $expectedsize,
-            ?string $checkname = null): void {
+    private function begin(
+        string $name,
+        bool $compress,
+        int $unixmode,
+        int $mtime,
+        int $expectedsize,
+        ?string $checkname = null
+    ): void {
         $this->require_idle();
         if ($this->finished || !is_resource($this->fh)) {
             throw new \coding_exception('The archive is closed');
@@ -404,8 +427,20 @@ class zip_writer {
             'csize' => 0,
         ];
 
-        $this->write(pack('VvvvvvVVVvv', 0x04034b50, $zip64 ? 45 : 20, self::FLAG_UTF8, $method, $dostime, $dosdate,
-            0, $zip64 ? self::MAX32 : 0, $zip64 ? self::MAX32 : 0, strlen($name), strlen($extra)) . $name . $extra);
+        $this->write(pack(
+            'VvvvvvVVVvv',
+            0x04034b50,
+            $zip64 ? 45 : 20,
+            self::FLAG_UTF8,
+            $method,
+            $dostime,
+            $dosdate,
+            0,
+            $zip64 ? self::MAX32 : 0,
+            $zip64 ? self::MAX32 : 0,
+            strlen($name),
+            strlen($extra)
+        ) . $name . $extra);
     }
 
     /**
@@ -485,9 +520,26 @@ class zip_writer {
         $extra .= pack('vvCV', 0x5455, 5, 1, max(0, min($e['mtime'], self::MAX32)));
         $needed = ($zip64extra !== '') ? 45 : 20;
         $isdir = ($e['mode'] & 0170000) === 0040000;
-        $record = pack('VvvvvvvVVVvvvvvVV', 0x02014b50, self::MADE_BY, $needed, self::FLAG_UTF8, $e['method'],
-            $e['dostime'], $e['dosdate'], $crc, $csize32, $usize32, $namelength, strlen($extra), 0, 0, 0,
-            ($e['mode'] << 16) | ($isdir ? 0x10 : 0), $offset32) . $e['name'] . $extra;
+        $record = pack(
+            'VvvvvvvVVVvvvvvVV',
+            0x02014b50,
+            self::MADE_BY,
+            $needed,
+            self::FLAG_UTF8,
+            $e['method'],
+            $e['dostime'],
+            $e['dosdate'],
+            $crc,
+            $csize32,
+            $usize32,
+            $namelength,
+            strlen($extra),
+            0,
+            0,
+            0,
+            ($e['mode'] << 16) | ($isdir ? 0x10 : 0),
+            $offset32
+        ) . $e['name'] . $extra;
         if (fwrite($this->spool, $record) !== strlen($record)) {
             throw new backup_exception('writefailed', basename($this->spoolpath));
         }

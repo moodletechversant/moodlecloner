@@ -65,18 +65,25 @@ if ($action === 'create') {
         $problems = installer_auth::password_problems($password, optional_param('installerpassword2', '', PARAM_RAW));
         // Never reuse the administrator's own Moodle password (only the current user's can be checked).
         $account = $DB->get_record('user', ['id' => $USER->id], 'id, auth, password');
-        if (!$problems && $account && $account->auth === 'manual' && $account->password !== '' &&
-                validate_internal_user_password($account, $password)) {
+        if (
+            !$problems && $account && $account->auth === 'manual' && $account->password !== '' &&
+                validate_internal_user_password($account, $password)
+        ) {
             $problems[] = 'reused';
         }
         if ($problems) {
-            redirect($pageurl, implode(' ', array_map(function($code) {
+            redirect($pageurl, implode(' ', array_map(function ($code) {
                 return get_string('error:installerpassword_' . $code, 'tool_moodleclone', installer_auth::MIN_LENGTH);
             }, $problems)), null, notification::NOTIFY_ERROR);
         }
         $installerauth = installer_auth::from_password($password);
-        unset($password, $_POST['installerpassword'], $_POST['installerpassword2'], $_REQUEST['installerpassword'],
-            $_REQUEST['installerpassword2']);
+        unset(
+            $password,
+            $_POST['installerpassword'],
+            $_POST['installerpassword2'],
+            $_REQUEST['installerpassword'],
+            $_REQUEST['installerpassword2']
+        );
     } else {
         redirect($pageurl, get_string('error:installerprotection', 'tool_moodleclone'), null, notification::NOTIFY_ERROR);
     }
@@ -86,8 +93,12 @@ if ($action === 'create') {
         redirect($pageurl, $e->getMessage(), null, notification::NOTIFY_ERROR);
     }
     $message = worker_status::is_ready() ? 'jobqueued' : 'jobqueuednoworker';
-    redirect($pageurl, get_string($message, 'tool_moodleclone', $job->get('id')), null,
-        $message === 'jobqueued' ? notification::NOTIFY_SUCCESS : notification::NOTIFY_WARNING);
+    redirect(
+        $pageurl,
+        get_string($message, 'tool_moodleclone', $job->get('id')),
+        null,
+        $message === 'jobqueued' ? notification::NOTIFY_SUCCESS : notification::NOTIFY_WARNING
+    );
 }
 
 if ($action === 'cancel') {
@@ -118,10 +129,12 @@ if ($action === 'delete') {
     require_sesskey();
     echo $OUTPUT->header();
     echo $OUTPUT->heading(get_string('pluginname', 'tool_moodleclone'));
-    echo $OUTPUT->confirm(get_string('confirmdelete', 'tool_moodleclone', $id),
+    echo $OUTPUT->confirm(
+        get_string('confirmdelete', 'tool_moodleclone', $id),
         new single_button(new moodle_url($pageurl, ['action' => 'delete', 'id' => $id, 'confirm' => 1,
             'sesskey' => sesskey()]), get_string('delete'), 'post'),
-        $pageurl);
+        $pageurl
+    );
     echo $OUTPUT->footer();
     die();
 }
@@ -139,6 +152,13 @@ $checks[] = worker_status::check($worker);
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('pluginname', 'tool_moodleclone'));
-echo $OUTPUT->render(new \tool_moodleclone\output\index_page($snapshot, $checks, $pageurl, $active,
-    queue::get_recent(20), $workspace, $worker));
+echo $OUTPUT->render(new \tool_moodleclone\output\index_page(
+    $snapshot,
+    $checks,
+    $pageurl,
+    $active,
+    queue::get_recent(20),
+    $workspace,
+    $worker
+));
 echo $OUTPUT->footer();

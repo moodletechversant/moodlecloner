@@ -33,7 +33,6 @@ require_once(__DIR__ . '/../../fixtures/fixture_helper.php');
  * @covers     \tool_moodleclone\local\filesystem\tree_walker
  */
 class tree_walker_test extends \advanced_testcase {
-
     /**
      * Skip on platforms without symlinks.
      *
@@ -76,7 +75,7 @@ class tree_walker_test extends \advanced_testcase {
         $root = make_request_directory();
         fixture_helper::make_tree($root, ['keep/a.txt' => 'a', 'skip/b.txt' => 'b', 'config.php' => 'secret']);
 
-        $entries = $this->walk(new tree_walker($root, function(string $relative) {
+        $entries = $this->walk(new tree_walker($root, function (string $relative) {
             return $relative !== 'skip' && $relative !== 'config.php';
         }));
 
@@ -107,7 +106,7 @@ class tree_walker_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function external_link_provider(): array {
+    public static function external_link_provider(): array {
         return [
             'absolute outside' => ['/etc'],
             'relative climbing out' => ['../../outside'],
@@ -138,7 +137,7 @@ class tree_walker_test extends \advanced_testcase {
         $this->require_symlinks();
         $root = make_request_directory();
         $outside = make_request_directory();
-        // "hop" looks internal lexically but points at "out", which leaves the tree.
+        // The "hop" link looks internal lexically but points at "out", which leaves the tree.
         fixture_helper::make_tree($root, ['out' => ['link' => $outside], 'hop' => ['link' => 'out']]);
 
         $this->expectException(backup_exception::class);
@@ -180,7 +179,7 @@ class tree_walker_test extends \advanced_testcase {
         file_put_contents($root . '/file.txt', 'x');
         $warnings = [];
 
-        $entries = $this->walk(new tree_walker($root, null, function(string $code, string $relative) use (&$warnings) {
+        $entries = $this->walk(new tree_walker($root, null, function (string $code, string $relative) use (&$warnings) {
             $warnings[] = "{$code}:{$relative}";
         }));
 

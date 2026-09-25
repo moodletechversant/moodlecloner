@@ -41,7 +41,6 @@ use tool_moodleclone\local\backup\backup_exception;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class tree_walker {
-
     /** @var string Real path of the root, forward slashes, no trailing slash. */
     private $root;
 

@@ -26,7 +26,6 @@ namespace tool_moodleclone\local\package;
  * @covers     \tool_moodleclone\local\package\checksum_writer
  */
 class checksum_writer_test extends \advanced_testcase {
-
     public function test_output_is_parseable_and_in_insertion_order(): void {
         $path = make_request_directory() . '/checksums.spool';
         $writer = new checksum_writer($path);
@@ -35,8 +34,10 @@ class checksum_writer_test extends \advanced_testcase {
         $this->assertSame(2, $writer->count());
         $this->assertSame($path, $writer->close());
 
-        $this->assertSame(hash('sha256', 'b') . "  moodle/b.php\n" . hash('sha256', 'db') . "  database.sql.gz\n",
-            file_get_contents($path));
+        $this->assertSame(
+            hash('sha256', 'b') . "  moodle/b.php\n" . hash('sha256', 'db') . "  database.sql.gz\n",
+            file_get_contents($path)
+        );
         $parsed = checksums::from_string(file_get_contents($path));
         $this->assertSame(hash('sha256', 'db'), $parsed->get('database.sql.gz'));
     }
@@ -46,7 +47,7 @@ class checksum_writer_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function invalid_provider(): array {
+    public static function invalid_provider(): array {
         $hash = hash('sha256', 'x');
         return [
             'traversal' => ['../x', $hash],

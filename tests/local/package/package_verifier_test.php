@@ -29,7 +29,6 @@ use tool_moodleclone\local\environment\snapshot;
  * @covers     \tool_moodleclone\local\package\package_verifier
  */
 class package_verifier_test extends \advanced_testcase {
-
     /**
      * Source snapshot.
      *
@@ -81,10 +80,18 @@ class package_verifier_test extends \advanced_testcase {
         if (in_array('wrongstats', $break)) {
             $stats['moodle']['files'] = 3;
         }
-        $manifest = manifest::from_snapshot($this->snapshot(), ['moodle' => true, 'moodledata' => true, 'database' => true],
-            time(), ['version' => 2026092401, 'release' => '0.2.0'], $stats,
+        $manifest = manifest::from_snapshot(
+            $this->snapshot(),
+            ['moodle' => true, 'moodledata' => true, 'database' => true],
+            time(),
+            ['version' => 2026092401, 'release' => '0.2.0'],
+            $stats,
             ['format' => 'mysql', 'format_version' => 1, 'compression' => 'gzip', 'charset' => 'utf8mb4',
-                'collation' => 'utf8mb4_unicode_ci', 'consistency' => 'snapshot', 'max_statement_bytes' => 0], ['cache']);
+            'collation' => 'utf8mb4_unicode_ci',
+            'consistency' => 'snapshot',
+            'max_statement_bytes' => 0],
+            ['cache']
+        );
         $lines['manifest.json'] = $zip->add_string('manifest.json', $manifest->to_json(), true)['sha256'];
 
         if (in_array('skipline', $break)) {
@@ -108,7 +115,7 @@ class package_verifier_test extends \advanced_testcase {
     public function test_valid_package_passes(): void {
         [$path, $count] = $this->build(make_request_directory());
         $fractions = [];
-        $manifest = (new package_verifier(function(float $f) use (&$fractions) {
+        $manifest = (new package_verifier(function (float $f) use (&$fractions) {
             $fractions[] = $f;
         }))->verify($path, $count);
         $this->assertSame(3, $manifest->get('format'));
@@ -120,7 +127,7 @@ class package_verifier_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function broken_provider(): array {
+    public static function broken_provider(): array {
         return [
             'file missing from checksums' => ['skipline', 'does not match the archive'],
             'checksum for missing file' => ['extraline', 'not in the archive'],
@@ -156,7 +163,7 @@ class package_verifier_test extends \advanced_testcase {
 
     public function test_tampered_content_rejected(): void {
         [$path, $count] = $this->build(make_request_directory());
-        // 'pool' is stored uncompressed; change it in place.
+        // The 'pool' entry is stored uncompressed; change it in place.
         $data = file_get_contents($path);
         $offset = strpos($data, 'pool');
         $this->assertNotFalse($offset);

@@ -33,7 +33,6 @@ use tool_moodleclone\local\filesystem\path_validator;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class content_policy {
-
     /** @var string[] Top-level name => reason string identifier (component tool_moodleclone). */
     private $excludeddirs;
 
@@ -138,7 +137,7 @@ class content_policy {
      * @return callable fn(string $relative): bool
      */
     public function get_filter(): callable {
-        return function(string $relative): bool {
+        return function (string $relative): bool {
             return $this->should_include($relative);
         };
     }
@@ -149,8 +148,11 @@ class content_policy {
      * @return string[]
      */
     public function describe_exclusions(): array {
-        $all = array_merge(array_keys($this->excludeddirs), array_keys($this->excludedpaths),
-            array_keys($this->excludedprefixes));
+        $all = array_merge(
+            array_keys($this->excludeddirs),
+            array_keys($this->excludedpaths),
+            array_keys($this->excludedprefixes)
+        );
         $all = array_values(array_unique(array_map('strval', $all)));
         sort($all, SORT_STRING);
         return $all;

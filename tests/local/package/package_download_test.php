@@ -28,7 +28,6 @@ use tool_moodleclone\local\job\job;
  * @covers     \tool_moodleclone\local\package\package_download
  */
 class package_download_test extends \advanced_testcase {
-
     /** @var string */
     private const NAME = 'moodle-clone-2026-01-01-000000.zip';
 

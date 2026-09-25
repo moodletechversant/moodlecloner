@@ -29,7 +29,6 @@ use tool_moodleclone\local\environment\snapshot;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class manifest {
-
     /** @var int Format written into new packages (1 was the unreleased Phase 1 draft; 2 lacked installer_auth). */
     public const FORMAT = 3;
 
@@ -82,8 +81,16 @@ class manifest {
      * @return self
      * @throws invalid_package_exception
      */
-    public static function from_snapshot(snapshot $snapshot, array $contents, int $created, array $generator,
-            array $statistics, ?array $databasedump, array $moodledataexcluded, ?installer_auth $installerauth = null): self {
+    public static function from_snapshot(
+        snapshot $snapshot,
+        array $contents,
+        int $created,
+        array $generator,
+        array $statistics,
+        ?array $databasedump,
+        array $moodledataexcluded,
+        ?installer_auth $installerauth = null
+    ): self {
         return new self([
             'format' => self::FORMAT,
             'product' => self::PRODUCT,

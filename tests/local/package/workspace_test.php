@@ -29,7 +29,6 @@ use tool_moodleclone\local\filesystem\invalid_path_exception;
  * @covers     \tool_moodleclone\local\package\workspace
  */
 class workspace_test extends \advanced_testcase {
-
     public function test_prepare_creates_private_directories(): void {
         $dataroot = make_request_directory();
         $workspace = new workspace($dataroot);
@@ -57,7 +56,7 @@ class workspace_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function bad_name_provider(): array {
+    public static function bad_name_provider(): array {
         return [['../../config.php'], ['moodle-clone-2026-09-24-134501.zip/../../x'], ['.htaccess'],
             ['moodle-clone-2026-09-24-134501.zip.part'], ['/etc/passwd']];
     }
@@ -79,8 +78,10 @@ class workspace_test extends \advanced_testcase {
         $dataroot = make_request_directory();
         $workspace = new workspace($dataroot);
         $workspace->prepare();
-        $this->assertSame(str_replace('\\', '/', realpath($dataroot)) . '/moodleclone/packages/moodle-clone-2026-09-24-134501.zip',
-            $workspace->get_package_path('moodle-clone-2026-09-24-134501.zip'));
+        $this->assertSame(
+            str_replace('\\', '/', realpath($dataroot)) . '/moodleclone/packages/moodle-clone-2026-09-24-134501.zip',
+            $workspace->get_package_path('moodle-clone-2026-09-24-134501.zip')
+        );
     }
 
     public function test_remove_tree_does_not_follow_symlinks(): void {
@@ -159,7 +160,7 @@ class workspace_test extends \advanced_testcase {
         if (!\tool_moodleclone\local\environment\os_identity::is_supported() || posix_geteuid() === 0) {
             $this->markTestSkipped('Needs posix and a non-root user');
         }
-        // "/" belongs to root, so it stands in for a directory owned by someone else.
+        // The "/" directory belongs to root, so it stands in for a directory owned by someone else.
         $problem = workspace::ownership_problem('/');
         $this->assertSame('root', $problem->owner);
         $this->expectException(backup_exception::class);

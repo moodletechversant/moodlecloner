@@ -34,7 +34,6 @@ use tool_moodleclone\local\package\vanished_file_exception;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class tree_collector implements optional_step {
-
     /**
      * Implemented.
      *
@@ -57,12 +56,20 @@ abstract class tree_collector implements optional_step {
      * @param int $donebytes Bytes processed so far, updated.
      * @return void
      */
-    protected function collect_tree(backup_state $state, string $root, string $entryprefix, ?callable $filter,
-            callable $compress, array &$stats, int $totalbytes, int &$donebytes): void {
-        $walker = new tree_walker($root, $filter, function(string $code, string $relative) use ($state, $entryprefix) {
+    protected function collect_tree(
+        backup_state $state,
+        string $root,
+        string $entryprefix,
+        ?callable $filter,
+        callable $compress,
+        array &$stats,
+        int $totalbytes,
+        int &$donebytes
+    ): void {
+        $walker = new tree_walker($root, $filter, function (string $code, string $relative) use ($state, $entryprefix) {
             $state->warn($code, $entryprefix . '/' . $relative);
         });
-        $report = function(int $bytes) use ($state, &$donebytes, $totalbytes) {
+        $report = function (int $bytes) use ($state, &$donebytes, $totalbytes) {
             $donebytes += $bytes;
             if ($totalbytes > 0) {
                 $state->progress(min(0.99, $donebytes / $totalbytes));

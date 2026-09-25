@@ -14,7 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-// phpcs:ignoreFile -- standalone installer, deliberately independent of Moodle.
+// The installer is one standalone file that runs before any Moodle exists on the destination, so three rules cannot apply.
+// phpcs:disable moodle.Files.MoodleInternal.MoodleInternalGlobalState -- There is no Moodle to check for yet.
+// phpcs:disable PSR1.Classes.ClassDeclaration.MultipleClasses -- One file, so it can be copied on its own.
+// phpcs:disable moodle.Strings.ForbiddenStrings.Found -- The SQL it handles is MySQL, which quotes identifiers with backticks.
 
 /**
  * Moodle Clone standalone installer.
@@ -38,27 +41,57 @@
 namespace MoodleCloneInstaller;
 
 // The copy shipped inside the plugin is a template and must never run in place.
-if (is_file(__DIR__ . '/../version.php') &&
-        strpos((string) @file_get_contents(__DIR__ . '/../version.php'), "'tool_moodleclone'") !== false) {
+if (
+    is_file(__DIR__ . '/../version.php') &&
+        strpos((string) @file_get_contents(__DIR__ . '/../version.php'), "'tool_moodleclone'") !== false
+) {
     http_response_code(403);
     header('Content-Type: text/plain; charset=utf-8');
-    echo "This is the Moodle Clone installer template. Download it from the Moodle Clone admin page and run it on the destination server.\n";
+    echo "This is the Moodle Clone installer template. " .
+        "Download it from the Moodle Clone admin page and run it on the destination server.\n";
     exit;
 }
 
+/** @var string Version of this installer. */
 const VERSION = '1.1.0';
+
+/** @var int[] Package formats this installer can read. */
 const FORMATS = [2, 3];
+
+/** @var string Product name a package manifest must declare. */
 const PRODUCT = 'moodle-clone';
+
+/** @var string The file names a package may have. */
 const PACKAGE_PATTERN = '/^moodle-clone-\d{4}-\d{2}-\d{2}-\d{6}\.zip$/';
+
+/** @var string One-time key file written into the installation directory (key file mode). */
 const KEY_FILE = 'moodleclone-installer-key.php';
+
+/** @var string Authorization state file: failed attempts and authorized sessions. */
 const AUTH_FILE = 'moodleclone-installer-auth.php';
+
+/** @var string Marker written when the installation has finished; the installer refuses to run while it exists. */
 const LOCK_FILE = 'moodleclone-installer.lock';
+
+/** @var string Lock file that keeps two requests from working on the restore at once. */
 const RUN_LOCK = 'moodleclone-installer.running';
+
+/** @var string Scratch directory, inside moodledata, for the package contents and the database dump. */
 const WORK_DIR = '.moodleclone-restore';
+
+/** @var string First line of the .htaccess the installer writes, so it can recognise its own. */
 const HTACCESS_MARK = '# moodleclone-installer protection';
+
+/** @var string Comment that ends a complete database dump; a dump without it is truncated. */
 const COMPLETION_MARKER = '-- Moodle Clone dump completed';
+
+/** @var int Bytes read or written per block while copying and hashing large files. */
 const CHUNK = 1048576;
+
+/** @var int Seconds of work in one request before the installer hands control back to the browser. */
 const SLICE_SECONDS = 20;
+
+/** @var string Name of the PHP session the installer uses. */
 const SESSION_NAME = 'MOODLECLONEINSTALLER';
 
 /** PHP extensions Moodle 4.1 requires (admin/environment.xml), plus mysqli for the database. */
@@ -107,7 +140,6 @@ class installer_exception extends \Exception {
  * Path rules shared by every filesystem operation.
  */
 class paths {
-
     /**
      * Whether a package-relative path is safe: not empty, forward slashes only,
      * not absolute, no drive letter, no "."/".."/empty segments, no control
@@ -117,8 +149,10 @@ class paths {
      * @return bool
      */
     public static function is_safe_relative(string $path): bool {
-        if ($path === '' || strlen($path) > 4096 || preg_match('/[\x00-\x1F\x7F\\\\]/', $path) ||
-                !preg_match('//u', $path) || $path[0] === '/' || preg_match('/^[A-Za-z]:/', $path)) {
+        if (
+            $path === '' || strlen($path) > 4096 || preg_match('/[\x00-\x1F\x7F\\\\]/', $path) ||
+                !preg_match('//u', $path) || $path[0] === '/' || preg_match('/^[A-Za-z]:/', $path)
+        ) {
             return false;
         }
         foreach (explode('/', $path) as $segment) {
@@ -219,7 +253,6 @@ class paths {
  * Validation of manifest.json (package formats 2 and 3), mirroring tool_moodleclone's manifest_validator.
  */
 class manifest_check {
-
     /** @var string[] Required top-level keys and types. */
     private const FIELDS = [
         'format' => 'integer', 'product' => 'string', 'created' => 'string', 'generator' => 'array',
@@ -267,7 +300,8 @@ class manifest_check {
             return $errors;
         }
         if (!in_array($data['format'], FORMATS, true)) {
-            $errors[] = "unsupported package format {$data['format']} (this installer reads formats " . implode(', ', FORMATS) . ')';
+            $errors[] = "unsupported package format {$data['format']} (this installer reads formats " . implode(', ', FORMATS) .
+                ')';
         }
         if (isset($data['installer_auth'])) {
             $errors = array_merge($errors, auth_verifier::validate($data['installer_auth']));
@@ -290,9 +324,11 @@ class manifest_check {
             }
         }
         $dump = $data['database_dump'];
-        if (!is_array($dump) || ($dump['format'] ?? null) !== 'mysql' || ($dump['format_version'] ?? null) !== 1 ||
+        if (
+            !is_array($dump) || ($dump['format'] ?? null) !== 'mysql' || ($dump['format_version'] ?? null) !== 1 ||
                 ($dump['compression'] ?? null) !== 'gzip' || ($dump['consistency'] ?? null) !== 'snapshot' ||
-                !is_int($dump['max_statement_bytes'] ?? null)) {
+                !is_int($dump['max_statement_bytes'] ?? null)
+        ) {
             $errors[] = 'unsupported database dump description';
         }
         foreach (['moodle', 'moodledata', 'database'] as $component) {
@@ -321,7 +357,10 @@ class manifest_check {
                 continue;
             }
             $path = $prefix === '' ? (string) $key : $prefix . '.' . $key;
-            if (is_string($key) && preg_match('/pass(word|wd)?|secret|token|api_?key|private_?key|salt|cookie|session|credential/i', $key)) {
+            if (
+                is_string($key) &&
+                preg_match('/pass(word|wd)?|secret|token|api_?key|private_?key|salt|cookie|session|credential/i', $key)
+            ) {
                 $found[] = $path;
             }
             if (is_array($value)) {
@@ -339,10 +378,16 @@ class manifest_check {
  * installation directory (the Phase 3 mechanism, and what packages of format 2 use).
  */
 class auth_verifier {
-
+    /** @var string Mode: the package carries a salted password verifier. */
     public const MODE_PASSWORD = 'password';
+
+    /** @var string Mode: the installer writes a one-time key file. */
     public const MODE_KEYFILE = 'keyfile';
+
+    /** @var int Fewest PBKDF2 iterations accepted; a weaker verifier is refused. */
     public const MIN_ITERATIONS = 100000;
+
+    /** @var int Most PBKDF2 iterations accepted; a hostile package must not stall the server. */
     public const MAX_ITERATIONS = 2000000;
 
     /**
@@ -370,7 +415,10 @@ class auth_verifier {
         if ($data['kdf'] !== 'pbkdf2-sha256') {
             $errors[] = 'installer_auth.kdf is not supported';
         }
-        if (!is_int($data['iterations']) || $data['iterations'] < self::MIN_ITERATIONS || $data['iterations'] > self::MAX_ITERATIONS) {
+        if (
+            !is_int($data['iterations']) || $data['iterations'] < self::MIN_ITERATIONS ||
+            $data['iterations'] > self::MAX_ITERATIONS
+        ) {
             $errors[] = 'installer_auth.iterations is out of range';
         }
         foreach (['salt' => 16, 'verifier' => 32] as $key => $bytes) {
@@ -455,18 +503,40 @@ class auth_verifier {
  * It fails closed: if the file cannot be read or written, nobody is authorized.
  */
 class auth_store {
-
+    /** @var int Failed attempts a client may make before it is locked out. */
     public const FREE_FAILURES = 4;
+
+    /** @var int Seconds of the first lock-out; each further failure doubles it. */
     public const BASE_LOCK = 30;
+
+    /** @var int Longest lock-out of one client, in seconds. */
     public const MAX_LOCK = 900;
+
+    /** @var int Seconds without a failure after which a client's failures are forgotten. */
     public const FORGET_AFTER = 3600;
+
+    /** @var int Window, in seconds, over which failures from all clients are counted. */
     public const GLOBAL_WINDOW = 900;
+
+    /** @var int Failures within the window that lock out every client. */
     public const GLOBAL_MAX = 30;
+
+    /** @var int Seconds every client is locked out once the global limit is passed. */
     public const GLOBAL_LOCK = 300;
+
+    /** @var int Seconds of inactivity after which an authorized session expires. */
     public const IDLE_TTL = 1800;
+
+    /** @var int Seconds after which an authorized session expires however active it is. */
     public const ABSOLUTE_TTL = 43200;
+
+    /** @var int Most authorized sessions kept. */
     public const MAX_SESSIONS = 20;
+
+    /** @var int Most clients tracked for failed attempts. */
     public const MAX_CLIENTS = 200;
+
+    /** @var string First line of the state file, so it prints nothing if it is ever served as PHP. */
     private const GUARD = "<?php exit; ?>\n";
 
     /** @var string */
@@ -476,6 +546,8 @@ class auth_store {
     private $clock;
 
     /**
+     * Create the store for one state file.
+     *
      * @param string $file Path of the state file.
      * @param callable|null $clock Returns the current Unix time (tests).
      */
@@ -492,13 +564,14 @@ class auth_store {
      */
     public function begin_attempt(string $client): array {
         $result = ['allowed' => false, 'retry' => 0, 'ticket' => ''];
-        $this->transaction(function(array &$state, int $now) use ($client, &$result) {
+        $this->transaction(function (array &$state, int $now) use ($client, &$result) {
             $c = $state['clients'][$client] ?? null;
-            $c = is_array($c) ? array_map('intval', $c) + ['fails' => 0, 'last' => 0, 'until' => 0] : ['fails' => 0, 'last' => 0, 'until' => 0];
+            $c = is_array($c) ? array_map('intval', $c) + ['fails' => 0, 'last' => 0, 'until' => 0] : ['fails' => 0,
+                'last' => 0, 'until' => 0];
             if ($c['last'] < $now - self::FORGET_AFTER) {
                 $c = ['fails' => 0, 'last' => 0, 'until' => 0];
             }
-            $state['global']['times'] = array_values(array_filter($state['global']['times'] ?? [], function($t) use ($now) {
+            $state['global']['times'] = array_values(array_filter($state['global']['times'] ?? [], function ($t) use ($now) {
                 return $t > $now - self::GLOBAL_WINDOW;
             }));
             $wait = max($c['until'] - $now, ($state['global']['until'] ?? 0) - $now);
@@ -530,7 +603,7 @@ class auth_store {
      * @return void
      */
     public function succeeded(string $client, string $ticket): void {
-        $this->transaction(function(array &$state, int $now) use ($client, $ticket) {
+        $this->transaction(function (array &$state, int $now) use ($client, $ticket) {
             unset($state['clients'][$client]);
             $times = $state['global']['times'] ?? [];
             $key = array_search((int) $ticket, $times, true);
@@ -553,12 +626,12 @@ class auth_store {
      */
     public function create_session(array $packages, string $useragent): string {
         $token = bin2hex(random_bytes(32));
-        $this->transaction(function(array &$state, int $now) use ($token, $packages, $useragent) {
+        $this->transaction(function (array &$state, int $now) use ($token, $packages, $useragent) {
             $sessions = $this->live_sessions($state, $now);
             $sessions[hash('sha256', $token)] = ['idle' => $now + self::IDLE_TTL, 'abs' => $now + self::ABSOLUTE_TTL,
                 'packages' => array_values($packages), 'ua' => substr(hash('sha256', $useragent), 0, 32)];
             if (count($sessions) > self::MAX_SESSIONS) {
-                uasort($sessions, function($a, $b) {
+                uasort($sessions, function ($a, $b) {
                     return $b['abs'] <=> $a['abs'];
                 });
                 $sessions = array_slice($sessions, 0, self::MAX_SESSIONS, true);
@@ -580,7 +653,7 @@ class auth_store {
             return null;
         }
         $found = null;
-        $this->transaction(function(array &$state, int $now) use ($token, $useragent, &$found) {
+        $this->transaction(function (array &$state, int $now) use ($token, $useragent, &$found) {
             $state['sessions'] = $this->live_sessions($state, $now);
             $key = hash('sha256', $token);
             $entry = $state['sessions'][$key] ?? null;
@@ -617,7 +690,7 @@ class auth_store {
      * @return array
      */
     private function live_sessions(array $state, int $now): array {
-        return array_filter($state['sessions'] ?? [], function($s) use ($now) {
+        return array_filter($state['sessions'] ?? [], function ($s) use ($now) {
             return is_array($s) && is_int($s['idle'] ?? null) && is_int($s['abs'] ?? null) && $s['idle'] > $now &&
                 $s['abs'] > $now && is_array($s['packages'] ?? null) && is_string($s['ua'] ?? null);
         });
@@ -660,7 +733,7 @@ class auth_store {
             }
             $change($state, (int) ($this->clock)());
             if (count($state['clients']) > self::MAX_CLIENTS) {
-                uasort($state['clients'], function($a, $b) {
+                uasort($state['clients'], function ($a, $b) {
                     return (int) ($b['last'] ?? 0) <=> (int) ($a['last'] ?? 0);
                 });
                 $state['clients'] = array_slice($state['clients'], 0, self::MAX_CLIENTS, true);
@@ -681,7 +754,6 @@ class auth_store {
  * Structural verification of a package, without extracting anything.
  */
 class package {
-
     /**
      * Open a package read-only with consistency checks.
      *
@@ -696,7 +768,9 @@ class package {
         }
         $result = $zip->open($path, $flags);
         if ($result !== true) {
-            throw new installer_exception("The package is not a readable ZIP archive (error {$result}). It may be incomplete or corrupt.");
+            throw new installer_exception(
+                "The package is not a readable ZIP archive (error {$result}). It may be incomplete or corrupt."
+            );
         }
         return $zip;
     }
@@ -812,8 +886,10 @@ class package {
                 foreach ($files as $index) {
                     $line++;
                     $text = fgets($list);
-                    if ($text === false || !preg_match('/^([0-9a-f]{64})  (.+)\n$/', $text, $m) ||
-                            $m[2] !== $zip->getNameIndex($index)) {
+                    if (
+                        $text === false || !preg_match('/^([0-9a-f]{64})  (.+)\n$/', $text, $m) ||
+                            $m[2] !== $zip->getNameIndex($index)
+                    ) {
                         throw new installer_exception("checksums.sha256 does not match the archive (line {$line}).");
                     }
                 }
@@ -869,7 +945,6 @@ class package {
  * robust against ";" inside comments or strings.
  */
 class sql_reader {
-
     /** @var resource */
     private $fh;
 
@@ -959,7 +1034,6 @@ class sql_reader {
  * values, DATA DIRECTORY, other engines...) stops the restore.
  */
 class sql_guard {
-
     /** @var string[] Session settings the dump may set, exactly. */
     private const SETS = [
         '/^SET NAMES [a-z0-9_]+$/',
@@ -1001,8 +1075,10 @@ class sql_guard {
             return ['type' => 'drop', 'table' => trim($m[1], '`'), 'rows' => 0];
         }
         if (preg_match('/^CREATE TABLE (' . $table . ') \(/', $sql, $m)) {
-            if (!preg_match('/\n\) ENGINE=InnoDB[^\n]*$/', $sql) ||
-                    preg_match('/\b(DATA|INDEX) DIRECTORY\b|\bCONNECTION\s*=|\bTABLESPACE\b|\bENCRYPTION\s*=/i', $sql)) {
+            if (
+                !preg_match('/\n\) ENGINE=InnoDB[^\n]*$/', $sql) ||
+                    preg_match('/\b(DATA|INDEX) DIRECTORY\b|\bCONNECTION\s*=|\bTABLESPACE\b|\bENCRYPTION\s*=/i', $sql)
+            ) {
                 throw new installer_exception('The dump contains a table definition with options the installer does not allow: ' .
                     $m[1]);
             }
@@ -1037,7 +1113,6 @@ class sql_guard {
  * MySQL access for the restore (mysqli; Moodle is not loaded yet).
  */
 class db {
-
     /**
      * Connect.
      *
@@ -1050,8 +1125,16 @@ class db {
         [$host, $port, $socket] = self::parse_host($settings['dbhost']);
         $db = mysqli_init();
         $db->options(MYSQLI_OPT_CONNECT_TIMEOUT, 10);
-        if (!@$db->real_connect($host, $settings['dbuser'], $settings['dbpass'], $selectdb ? $settings['dbname'] : null,
-                $port, $socket)) {
+        if (
+            !@$db->real_connect(
+                $host,
+                $settings['dbuser'],
+                $settings['dbpass'],
+                $selectdb ? $settings['dbname'] : null,
+                $port,
+                $socket
+            )
+        ) {
             // The driver message names the user and host, never the password.
             throw new installer_exception('Cannot connect to the database: ' . mysqli_connect_error());
         }
@@ -1116,7 +1199,6 @@ class db {
  * The installer: access control, wizard steps and the sliced restore.
  */
 class installer {
-
     /** @var string Installation directory (becomes the new Moodle dirroot). */
     private $dir;
 
@@ -1171,7 +1253,9 @@ class installer {
         header('X-Content-Type-Options: nosniff');
         header('Referrer-Policy: no-referrer');
         header('Cache-Control: no-store');
-        header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'self'");
+        header(
+            "Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'self'"
+        );
 
         if (is_file($this->dir . '/' . LOCK_FILE)) {
             $this->page('Installation finished', '<p>This installer has already completed an installation and is locked. ' .
@@ -1237,8 +1321,10 @@ class installer {
             return;
         }
         if (is_file($this->dir . '/config.php') && empty($this->state['run']['configwritten']) && $step !== 'done') {
-            throw new installer_exception('This directory already contains a Moodle config.php. The installer only installs into a ' .
-                'clean directory and never overwrites an existing site.');
+            throw new installer_exception(
+                'This directory already contains a Moodle config.php. The installer only installs into a ' .
+                'clean directory and never overwrites an existing site.'
+            );
         }
         switch ($step) {
             case 'package':
@@ -1256,8 +1342,11 @@ class installer {
             case 'run':
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                     // A reload: continue only through the form (POST with the CSRF token).
-                    $this->progress_page($this->task_label($this->state['run']['task'] ?? ''), $this->overall_progress(),
-                        'Continuing...');
+                    $this->progress_page(
+                        $this->task_label($this->state['run']['task'] ?? ''),
+                        $this->overall_progress(),
+                        'Continuing...'
+                    );
                     break;
                 }
                 $this->step_run();
@@ -1393,8 +1482,8 @@ class installer {
         if ($askpassword) {
             $body .= '<p>Enter the <b>installer password</b> that was chosen when this package was created on the source site. ' .
                 'It is checked here, against the package; nothing has to be read on the server.</p>' .
-                '<p><label>Installer password <input type="password" name="password" autocomplete="off" size="32" maxlength="1024" ' .
-                'autofocus></label></p>';
+                '<p><label>Installer password <input type="password" name="password" autocomplete="off" size="32" ' .
+                'maxlength="1024" autofocus></label></p>';
         }
         if ($askkey) {
             $body .= '<p>' . ($askpassword ? 'For packages made without an installer password: ' : '') . 'this installer has ' .
@@ -1455,7 +1544,7 @@ class installer {
             unset($this->state['package'], $this->state['hash'], $this->state['info']);
             $this->state['step'] = 'package';
         }
-        // (A restore already under way, for example after the idle timeout, carries on from where it was.)
+        // A restore already under way, for example after the idle timeout, carries on from where it was.
         $this->save();
         $this->redirect();
         return true;
@@ -1571,8 +1660,10 @@ class installer {
         $size = (int) filesize($path);
         $resumable = PHP_VERSION_ID >= 80000;
         $offset = (int) ($this->state['hash']['offset'] ?? 0);
-        $context = ($resumable && !empty($this->state['hash']['context'])) ? unserialize($this->state['hash']['context'],
-            ['allowed_classes' => [\HashContext::class]]) : hash_init('sha256');
+        $context = ($resumable && !empty($this->state['hash']['context'])) ? unserialize(
+            $this->state['hash']['context'],
+            ['allowed_classes' => [\HashContext::class]]
+        ) : hash_init('sha256');
         if (!$resumable || $offset === 0) {
             $context = hash_init('sha256');
             $offset = 0;
@@ -1613,7 +1704,7 @@ class installer {
      */
     private function step_environment(string $action): void {
         $checks = $this->environment_checks();
-        $errors = array_filter($checks, function($c) {
+        $errors = array_filter($checks, function ($c) {
             return $c[0] === 'error';
         });
         if ($action === 'environment' && !$errors) {
@@ -1625,7 +1716,8 @@ class installer {
         $info = $this->state['info'];
         $m = $info['manifest'];
         $body = '<table><tr><th>Package</th><td>' . h($this->state['package']) .
-            ($this->state['hash']['verified'] ? ' <span class="ok">SHA-256 verified</span>' : ' <span class="warn">no .sha256 file</span>') .
+            ($this->state['hash']['verified'] ? ' <span class="ok">SHA-256 verified</span>' :
+                ' <span class="warn">no .sha256 file</span>') .
             '</td></tr><tr><th>Created</th><td>' . h($m['created']) . ' by tool_moodleclone ' . h($m['generator']['release']) .
             '</td></tr><tr><th>Source site</th><td>' . h($m['wwwroot']) . '</td></tr><tr><th>Moodle</th><td>' .
             h($m['moodle_release']) . ' (' . h($m['moodle_version']) . ')</td></tr><tr><th>Contents</th><td>' .
@@ -1664,12 +1756,12 @@ class installer {
         } else {
             $checks[] = ['ok', 'PHP ' . PHP_VERSION . '.'];
         }
-        $missing = array_values(array_filter(REQUIRED_EXTENSIONS, function($e) {
+        $missing = array_values(array_filter(REQUIRED_EXTENSIONS, function ($e) {
             return !extension_loaded($e);
         }));
         $checks[] = $missing ? ['error', 'Missing PHP extensions: ' . implode(', ', $missing) . '.'] :
             ['ok', 'All PHP extensions Moodle requires are loaded.'];
-        $optional = array_values(array_filter(OPTIONAL_EXTENSIONS, function($e) {
+        $optional = array_values(array_filter(OPTIONAL_EXTENSIONS, function ($e) {
             return !extension_loaded($e) && !($e === 'opcache' && extension_loaded('Zend OPcache'));
         }));
         if ($optional) {
@@ -1746,26 +1838,36 @@ class installer {
                 return;
             }
         }
-        $field = function($name, $label, $help, $type = 'text') use ($defaults) {
+        $field = function ($name, $label, $help, $type = 'text') use ($defaults) {
             $value = $type === 'password' ? '' : $defaults[$name];
             return '<p><label>' . h($label) . '<br><input type="' . $type . '" name="' . $name . '" value="' . h($value) .
                 '" size="60" autocomplete="off"></label><br><small>' . $help . '</small></p>';
         };
-        $check = function($name, $label) use ($defaults) {
-            return '<p><label><input type="checkbox" name="' . $name . '" value="1"' . (!empty($defaults[$name]) ? ' checked' : '') .
+        $check = function ($name, $label) use ($defaults) {
+            return '<p><label><input type="checkbox" name="' . $name . '" value="1"' . (!empty($defaults[$name]) ? ' checked' :
+                '') .
                 '> ' . $label . '</label></p>';
         };
-        $body = ($errors ? '<div class="err"><p>' . implode('</p><p>', array_map(__NAMESPACE__ . '\h', $errors)) . '</p></div>' : '') .
+        $body = ($errors ? '<div class="err"><p>' . implode('</p><p>', array_map(__NAMESPACE__ . '\h', $errors)) .
+            '</p></div>' : '') .
             '<form method="post">' . $this->csrf() . '<input type="hidden" name="action" value="settings">' .
             '<h2>Site</h2>' .
             $field('wwwroot', 'Site URL ($CFG->wwwroot)', 'The address of this directory, without a trailing slash. Source: ' .
                 h($m['wwwroot'])) .
-            $field('dataroot', 'Moodledata directory ($CFG->dataroot)', 'Absolute path outside the web root. It must not exist yet, ' .
-                'or be empty; the web server user must be able to create it.') .
+            $field(
+                'dataroot',
+                'Moodledata directory ($CFG->dataroot)',
+                'Absolute path outside the web root. It must not exist yet, ' .
+                'or be empty; the web server user must be able to create it.'
+            ) .
             '<h2>Database (MySQL)</h2>' .
             $field('dbhost', 'Host', 'e.g. localhost, db.example.com:3306 or localhost:/run/mysqld/mysqld.sock') .
             $field('dbname', 'Database name', 'An existing database with no tables using the prefix below.') .
-            $field('dbuser', 'User', 'A user with CREATE, DROP, ALTER, INDEX, SELECT, INSERT, UPDATE and DELETE on that database.') .
+            $field(
+                'dbuser',
+                'User',
+                'A user with CREATE, DROP, ALTER, INDEX, SELECT, INSERT, UPDATE and DELETE on that database.'
+            ) .
             $field('dbpass', 'Password', !empty($this->state['settings']['dbpass']) ? 'Leave empty to keep the password entered ' .
                 'before.' : '', 'password') .
             '<p>Table prefix: <code>' . h($m['table_prefix']) . '</code> (from the package)</p>' .
@@ -1788,9 +1890,15 @@ class installer {
         $errors = [];
         $prefix = $this->state['info']['manifest']['table_prefix'];
         $url = parse_url($s['wwwroot']);
-        if (!filter_var($s['wwwroot'], FILTER_VALIDATE_URL) || !in_array(strtolower($url['scheme'] ?? ''), ['http', 'https'], true) ||
+        if (
+            !filter_var($s['wwwroot'], FILTER_VALIDATE_URL) || !in_array(
+                strtolower($url['scheme'] ?? ''),
+                ['http', 'https'],
+                true
+            ) ||
                 isset($url['user']) || isset($url['pass']) || isset($url['query']) || isset($url['fragment']) ||
-                preg_match('/[\s\'"\\\\<>]/', $s['wwwroot'])) {
+                preg_match('/[\s\'"\\\\<>]/', $s['wwwroot'])
+        ) {
             $errors[] = 'The site URL must be a plain http(s) address such as https://moodle.example.com.';
         }
 
@@ -1800,19 +1908,23 @@ class installer {
         } else {
             $resolved = paths::resolve($dataroot);
             $docroot = paths::resolve(rtrim(str_replace('\\', '/', (string) ($_SERVER['DOCUMENT_ROOT'] ?? $this->dir)), '/'));
-            if (paths::is_inside($resolved, paths::resolve($this->dir)) || paths::is_inside($resolved, $docroot) ||
-                    paths::is_inside(paths::resolve($this->dir), $resolved)) {
+            if (
+                paths::is_inside($resolved, paths::resolve($this->dir)) || paths::is_inside($resolved, $docroot) ||
+                    paths::is_inside(paths::resolve($this->dir), $resolved)
+            ) {
                 $errors[] = 'The moodledata directory must be outside the web root and must not contain it.';
             } else if (is_link($dataroot)) {
                 $errors[] = 'The moodledata directory must not be a symbolic link.';
             } else if (file_exists($dataroot)) {
                 if (!is_dir($dataroot) || count(array_diff(scandir($dataroot) ?: ['x'], ['.', '..'])) > 0) {
-                    $errors[] = 'The moodledata directory exists and is not empty. The installer only uses a new or empty directory.';
+                    $errors[] = 'The moodledata directory exists and is not empty. ' .
+                        'The installer only uses a new or empty directory.';
                 } else if (!is_writable($dataroot)) {
                     $errors[] = 'The moodledata directory is not writable by the web server user.';
                 }
             } else if (!is_dir(dirname($dataroot)) || !is_writable(dirname($dataroot))) {
-                $errors[] = 'The web server user cannot create ' . $dataroot . ' (its parent directory must exist and be writable).';
+                $errors[] = 'The web server user cannot create ' . $dataroot .
+                    ' (its parent directory must exist and be writable).';
             }
             if (!$errors) {
                 $free = @disk_free_space(file_exists($dataroot) ? $dataroot : dirname($dataroot));
@@ -1861,9 +1973,11 @@ class installer {
         }
         if (!$errors) {
             $probe = '`' . $prefix . 'mci_probe_' . bin2hex(random_bytes(3)) . '`';
-            if (!$db->query("CREATE TABLE {$probe} (id BIGINT NOT NULL, PRIMARY KEY (id)) ENGINE=InnoDB") ||
+            if (
+                !$db->query("CREATE TABLE {$probe} (id BIGINT NOT NULL, PRIMARY KEY (id)) ENGINE=InnoDB") ||
                     !$db->query("INSERT INTO {$probe} (id) VALUES (1)") || !$db->query("ALTER TABLE {$probe} ADD INDEX ix (id)") ||
-                    !$db->query("DROP TABLE {$probe}")) {
+                    !$db->query("DROP TABLE {$probe}")
+            ) {
                 $errors[] = 'The database user lacks privileges needed for the restore: ' . $db->error;
                 @$db->query("DROP TABLE IF EXISTS {$probe}");
             }
@@ -1887,7 +2001,9 @@ class installer {
         }
         if ($action === 'start') {
             if ($this->unexpected_files()) {
-                throw new installer_exception('The installation directory is no longer clean. Remove the extra files and start again.');
+                throw new installer_exception(
+                    'The installation directory is no longer clean. Remove the extra files and start again.'
+                );
             }
             $this->state['step'] = 'run';
             $this->state['run'] = ['task' => 'prepare', 'log' => []];
@@ -1905,7 +2021,8 @@ class installer {
             '<tr><th>Database</th><td>' . h($s['dbuser']) . '@' . h($s['dbhost']) . ' / ' . h($s['dbname']) . ', prefix ' .
             h($m['table_prefix']) . '</td></tr>' .
             '<tr><th>Outgoing email</th><td>' . ($s['noemail'] ? 'disabled' : 'enabled') . '</td></tr>' .
-            '<tr><th>Links in content</th><td>' . ($s['replaceurls'] ? 'rewritten to the new URL' : 'left unchanged') . '</td></tr>' .
+            '<tr><th>Links in content</th><td>' . ($s['replaceurls'] ? 'rewritten to the new URL' : 'left unchanged') .
+                '</td></tr>' .
             '</table><p>The restore runs in steps; keep this page open until it finishes. Only this installer is reachable in ' .
             'this directory until then (Apache: a temporary .htaccess).</p>' .
             '<form method="post" class="inline">' . $this->csrf() . '<input type="hidden" name="action" value="back">' .
@@ -1955,8 +2072,11 @@ class installer {
                     throw new installer_exception('Unknown installer task.');
             }
             $this->save();
-            $this->progress_page($this->task_label($this->state['run']['task']), $this->overall_progress(),
-                $this->state['run']['detail'] ?? '');
+            $this->progress_page(
+                $this->task_label($this->state['run']['task']),
+                $this->overall_progress(),
+                $this->state['run']['detail'] ?? ''
+            );
         } finally {
             flock($lock, LOCK_UN);
             fclose($lock);
@@ -2035,7 +2155,8 @@ class installer {
                 }
                 $line = fgets($list);
                 if ($line === false || !preg_match('/^([0-9a-f]{64})  (.+)\n$/', $line, $m) || $m[2] !== $name) {
-                    throw new installer_exception('checksums.sha256 is out of step with the archive at ' . rawurlencode($name) . '.');
+                    throw new installer_exception('checksums.sha256 is out of step with the archive at ' . rawurlencode($name) .
+                        '.');
                 }
                 if ($name === 'manifest.json') {
                     $this->hash_entry($zip, $name, null, $m[1]);
@@ -2075,7 +2196,8 @@ class installer {
                 $run['rows'] = 0;
                 $run['complete'] = false;
             }
-            $run['detail'] = number_format($run['index']) . ' of ' . number_format($zip->numFiles) . ' entries, ' . size($run['bytes']);
+            $run['detail'] = number_format($run['index']) . ' of ' . number_format($zip->numFiles) . ' entries, ' .
+                size($run['bytes']);
         } finally {
             fclose($list);
             $zip->close();
@@ -2301,7 +2423,9 @@ class installer {
         $expectedrows = (int) $m['statistics']['database']['rows'];
         $actual = count(db::prefixed_tables($db, $m['table_prefix']));
         if ($actual !== $expectedtables || count($run['tables']) !== $expectedtables) {
-            throw new installer_exception("The database has {$actual} tables after the restore; the package has {$expectedtables}.");
+            throw new installer_exception(
+                "The database has {$actual} tables after the restore; the package has {$expectedtables}."
+            );
         }
         if ($run['rows'] !== $expectedrows) {
             throw new installer_exception("{$run['rows']} rows were restored; the package has {$expectedrows}.");
@@ -2330,7 +2454,8 @@ class installer {
         [$host] = db::parse_host($s['dbhost']);
         $options = ['dbpersist' => 0, 'dbport' => $port === null ? '' : $port, 'dbsocket' => $socket === null ? '' : $socket];
         $lines = [
-            '<?php  // Moodle configuration file, written by the Moodle Clone installer ' . VERSION . ' on ' . gmdate('Y-m-d H:i:s') . ' UTC.',
+            '<?php  // Moodle configuration file, written by the Moodle Clone installer ' . VERSION . ' on ' .
+                gmdate('Y-m-d H:i:s') . ' UTC.',
             '',
             'unset($CFG);',
             'global $CFG;',
@@ -2363,8 +2488,10 @@ class installer {
         $lines[] = '// it is intentional because it prevents trailing whitespace problems!';
         $content = implode("\n", $lines) . "\n";
         $tmp = $this->dir . '/config.php.mci-part';
-        if (file_put_contents($tmp, $content, LOCK_EX) === false || !@chmod($tmp, 0640) ||
-                !@rename($tmp, $this->dir . '/config.php')) {
+        if (
+            file_put_contents($tmp, $content, LOCK_EX) === false || !@chmod($tmp, 0640) ||
+                !@rename($tmp, $this->dir . '/config.php')
+        ) {
             @unlink($tmp);
             throw new installer_exception('Cannot write ' . $this->dir . '/config.php.');
         }
@@ -2404,7 +2531,8 @@ class installer {
         if (!empty($run['moodlestarted'][$task])) {
             unset($run['moodlestarted'][$task]);
             $this->save();
-            throw new installer_exception('Moodle step "' . $this->task_label($task) . '" stopped without a result (check the web ' .
+            throw new installer_exception('Moodle step "' . $this->task_label($task) .
+                '" stopped without a result (check the web ' .
                 'server error log). Use Retry to run it again.');
         }
         $run['moodlestarted'][$task] = true;
@@ -2414,10 +2542,12 @@ class installer {
         $this->save();
         session_write_close();
 
-        register_shutdown_function(function() use ($resultfile) {
+        register_shutdown_function(function () use ($resultfile) {
             $error = error_get_last();
-            if (!is_file($resultfile) && $error !== null && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR,
-                    E_COMPILE_ERROR], true)) {
+            if (
+                !is_file($resultfile) && $error !== null && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR,
+                    E_COMPILE_ERROR], true)
+            ) {
                 @file_put_contents($resultfile, json_encode(['ok' => false, 'error' => $error['message']]));
             }
         });
@@ -2444,8 +2574,10 @@ class installer {
         $notes = [];
 
         // Hand the web directory back to Moodle: remove the temporary protection, restore the package's .htaccess.
-        if (!empty($run['htaccess']) && is_file($this->dir . '/.htaccess') &&
-                strpos((string) file_get_contents($this->dir . '/.htaccess'), HTACCESS_MARK) === 0) {
+        if (
+            !empty($run['htaccess']) && is_file($this->dir . '/.htaccess') &&
+                strpos((string) file_get_contents($this->dir . '/.htaccess'), HTACCESS_MARK) === 0
+        ) {
             @unlink($this->dir . '/.htaccess');
         }
         if (is_file($work . '/package.htaccess')) {
@@ -2472,7 +2604,8 @@ class installer {
             }
         }
         if (!$s['deletepackage']) {
-            $notes[] = 'The package was kept at ' . $this->package_path() . '. It contains the whole site: move it out of the web ' .
+            $notes[] = 'The package was kept at ' . $this->package_path() .
+                '. It contains the whole site: move it out of the web ' .
                 'directory or delete it.';
         }
         if ($remaining) {
@@ -2488,7 +2621,8 @@ class installer {
                 [$http],
                 isset($moodle['moodle_paths']['paths']) ? [['ok', 'Configuration paths migrated: ' .
                     (int) $moodle['moodle_paths']['paths'] . ' setting(s).']] : [],
-                !empty($moodle['moodle_paths']['jobs']) ? [['ok', (int) $moodle['moodle_paths']['jobs'] . ' Moodle Clone backup job(s) ' .
+                !empty($moodle['moodle_paths']['jobs']) ? [['ok', (int) $moodle['moodle_paths']['jobs'] .
+                    ' Moodle Clone backup job(s) ' .
                     'that were queued or running on the source were closed as failed on this copy.']] : [],
                 isset($moodle['moodle_urls']) ? [['ok', 'Links rewritten to the new site URL: ' .
                     (int) $moodle['moodle_urls']['updated'] . ' value(s) in ' . (int) $moodle['moodle_urls']['tables'] .
@@ -2549,8 +2683,10 @@ class installer {
             $removed[] = $name;
         }
         // Moodledata: only the directory recorded when the run started.
-        if (!empty($run['dataroot']) && paths::normalise_absolute($run['dataroot']) === $run['dataroot'] &&
-                substr_count($run['dataroot'], '/') >= 2) {
+        if (
+            !empty($run['dataroot']) && paths::normalise_absolute($run['dataroot']) === $run['dataroot'] &&
+                substr_count($run['dataroot'], '/') >= 2
+        ) {
             foreach (scandir($run['dataroot']) ?: [] as $name) {
                 if ($name !== '.' && $name !== '..') {
                     paths::remove_tree($run['dataroot'] . '/' . $name, $run['dataroot']);
@@ -2605,8 +2741,10 @@ class installer {
      * @return void
      */
     private function show_failed(): void {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'retry' &&
-                hash_equals($this->state['csrf'], (string) ($_POST['csrf'] ?? ''))) {
+        if (
+            $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'retry' &&
+                hash_equals($this->state['csrf'], (string) ($_POST['csrf'] ?? ''))
+        ) {
             $this->state['step'] = 'run';
             unset($this->state['error']);
             $this->save();
@@ -2648,7 +2786,8 @@ class installer {
             'moodle_urls' => 0.93, 'moodle_verify' => 0.96, 'finish' => 0.99];
         $base = $order[$run['task']] ?? 0;
         if ($run['task'] === 'extract') {
-            $total = max(1, array_sum(array_column($this->state['info']['counts'], 'bytes')) + $this->state['info']['databasesize']);
+            $total = max(1, array_sum(array_column($this->state['info']['counts'], 'bytes')) +
+                $this->state['info']['databasesize']);
             $base += 0.58 * min(1, ($run['bytes'] ?? 0) / $total);
         }
         return $base;
@@ -2879,8 +3018,10 @@ class installer {
  * Moodle APIs are used (set_config, the DML layer, purge_all_caches).
  */
 class moodle_steps {
-
-    /** @var string[] Tables never rewritten (same list as Moodle's db_should_replace(), plus the config tables handled via set_config). */
+    /**
+     * @var string[] Tables never rewritten (same list as Moodle's db_should_replace(), plus the config tables
+     *      handled via set_config).
+     */
     private const SKIP_TABLES = ['config', 'config_plugins', 'filter_config', 'sessions', 'events_queue',
         'repository_instance_config', 'block_instances', 'files'];
 
@@ -2967,10 +3108,17 @@ class moodle_steps {
             $now = time();
             $jobs = $DB->count_records_select('tool_moodleclone_jobs', "status IN ('pending', 'running')");
             if ($jobs) {
-                $DB->execute("UPDATE {tool_moodleclone_jobs} SET status = :failed, timefinished = :finished, timemodified = :modified, " .
-                    "errormessage = :message WHERE status IN ('pending', 'running')", ['failed' => 'failed', 'finished' => $now,
-                    'modified' => $now, 'message' => 'This backup was queued or running on the source site when it was cloned; it did ' .
-                    'not run here.']);
+                $DB->execute(
+                    "UPDATE {tool_moodleclone_jobs} SET status = :failed, timefinished = :finished, timemodified = :modified, " .
+                    "errormessage = :message WHERE status IN ('pending', 'running')",
+                    [
+                        'failed' => 'failed',
+                        'finished' => $now,
+                        'modified' => $now,
+                        'message' => 'This backup was queued or running on the source site when it was cloned; it did ' .
+                            'not run here.',
+                    ]
+                );
             }
         }
         return ['paths' => $changed, 'needsupgrade' => $needsupgrade, 'jobs' => $jobs];
@@ -3015,12 +3163,19 @@ class moodle_steps {
                 }
                 foreach ($variants as $search => $replace) {
                     $select = $DB->sql_like($name, ':search', true, true);
-                    $rs = $DB->get_recordset_select($table, $select, ['search' => '%' . $DB->sql_like_escape($search) . '%'], 'id',
-                        'id, ' . $name);
+                    $rs = $DB->get_recordset_select(
+                        $table,
+                        $select,
+                        ['search' => '%' . $DB->sql_like_escape($search) . '%'],
+                        'id',
+                        'id, ' . $name
+                    );
                     foreach ($rs as $record) {
                         $value = self::replace_value((string) $record->$name, $search, $replace);
-                        if ($value === null || ($column->meta_type === 'C' && $column->max_length > 0 &&
-                                \core_text::strlen($value) > $column->max_length)) {
+                        if (
+                            $value === null || ($column->meta_type === 'C' && $column->max_length > 0 &&
+                                \core_text::strlen($value) > $column->max_length)
+                        ) {
                             $skipped[] = "{$table}.{$name}#{$record->id}";
                             continue;
                         }
@@ -3080,8 +3235,10 @@ class moodle_steps {
         if (strpos($value, $search) === false) {
             return $value;
         }
-        if (preg_match('/^(a|O|C|s|i|d|b|N):/', $value) && ($value === 'b:0;' ||
-                ($data = @unserialize($value, ['allowed_classes' => false])) !== false)) {
+        if (
+            preg_match('/^(a|O|C|s|i|d|b|N):/', $value) && ($value === 'b:0;' ||
+                ($data = @unserialize($value, ['allowed_classes' => false])) !== false)
+        ) {
             if ($value === 'b:0;') {
                 return $value;
             }
@@ -3130,7 +3287,11 @@ class moodle_steps {
         if (is_array($data)) {
             $result = [];
             foreach ($data as $key => $item) {
-                $result[is_string($key) ? str_replace($search, $replace, $key) : $key] = self::replace_deep($item, $search, $replace);
+                $result[is_string($key) ? str_replace($search, $replace, $key) : $key] = self::replace_deep(
+                    $item,
+                    $search,
+                    $replace
+                );
             }
             return $result;
         }

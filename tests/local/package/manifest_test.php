@@ -29,7 +29,6 @@ use tool_moodleclone\local\environment\snapshot;
  * @covers     \tool_moodleclone\local\package\manifest_validator
  */
 class manifest_test extends \basic_testcase {
-
     /**
      * A snapshot with known values.
      *
@@ -87,17 +86,25 @@ class manifest_test extends \basic_testcase {
      * @param int $created
      * @return manifest
      */
-    private function build(array $contents = ['moodle' => true, 'moodledata' => true, 'database' => true],
-            int $created = 1790000000): manifest {
+    private function build(
+        array $contents = ['moodle' => true, 'moodledata' => true, 'database' => true],
+        int $created = 1790000000
+    ): manifest {
         $stats = $this->stats();
         foreach ($contents as $key => $included) {
             if (!$included) {
                 $stats[$key] = null;
             }
         }
-        return manifest::from_snapshot($this->make_snapshot(), $contents, $created,
-            ['version' => 2026092401, 'release' => '0.2.0 (Phase 2)'], $stats,
-            $contents['database'] ? $this->dump() : null, ['cache', 'sessions']);
+        return manifest::from_snapshot(
+            $this->make_snapshot(),
+            $contents,
+            $created,
+            ['version' => 2026092401, 'release' => '0.2.0 (Phase 2)'],
+            $stats,
+            $contents['database'] ? $this->dump() : null,
+            ['cache', 'sessions']
+        );
     }
 
     /**
@@ -115,8 +122,10 @@ class manifest_test extends \basic_testcase {
         $this->assertSame(3, $manifest->get('format'));
         $this->assertSame('moodle-clone', $manifest->get('product'));
         $this->assertSame(gmdate('Y-m-d\TH:i:s\Z', 1790000000), $manifest->get('created'));
-        $this->assertSame(['component' => 'tool_moodleclone', 'version' => 2026092401, 'release' => '0.2.0 (Phase 2)'],
-            $manifest->get('generator'));
+        $this->assertSame(
+            ['component' => 'tool_moodleclone', 'version' => 2026092401, 'release' => '0.2.0 (Phase 2)'],
+            $manifest->get('generator')
+        );
         $this->assertSame('2022112800.00', $manifest->get('moodle_version'));
         $this->assertSame('mysqli', $manifest->get('database_type'));
         $this->assertSame('mysql', $manifest->get('database_family'));
@@ -138,14 +147,23 @@ class manifest_test extends \basic_testcase {
         $this->assertFalse($this->build()->get_installer_auth()->is_password());
 
         $auth = installer_auth::from_password('a long installer passphrase');
-        $manifest = manifest::from_snapshot($this->make_snapshot(), ['moodle' => true, 'moodledata' => true, 'database' => true],
-            1790000000, ['version' => 2026092403, 'release' => '0.3.1'], $this->stats(), $this->dump(), [], $auth);
+        $manifest = manifest::from_snapshot(
+            $this->make_snapshot(),
+            ['moodle' => true, 'moodledata' => true, 'database' => true],
+            1790000000,
+            ['version' => 2026092403, 'release' => '0.3.1'],
+            $this->stats(),
+            $this->dump(),
+            [],
+            $auth
+        );
         $this->assertSame($auth->to_array(), $manifest->get('installer_auth'));
         $this->assertTrue($manifest->get_installer_auth()->verify('a long installer passphrase'));
         // The verifier is public offline-verification data, so the generic secret-looking-key scan skips exactly this object.
         $this->assertSame([], manifest_validator::find_forbidden_keys($manifest->to_array()));
         $this->assertSame(['generator.api_key'], manifest_validator::find_forbidden_keys(
-            ['installer_auth' => ['salt' => 'x'], 'generator' => ['api_key' => 'x']]));
+            ['installer_auth' => ['salt' => 'x'], 'generator' => ['api_key' => 'x']]
+        ));
         $this->assertSame(['other.salt'], manifest_validator::find_forbidden_keys(['other' => ['salt' => 'x']]));
         $this->assertStringNotContainsString('a long installer passphrase', $manifest->to_json());
     }
@@ -208,135 +226,135 @@ class manifest_test extends \basic_testcase {
      *
      * @return array
      */
-    public function invalid_manifest_provider(): array {
+    public static function invalid_manifest_provider(): array {
         return [
-            'missing field' => [function(array $d) {
+            'missing field' => [function (array $d) {
                 unset($d['wwwroot']);
                 return $d;
             }, "missing key 'wwwroot'"],
-            'unknown field' => [function(array $d) {
+            'unknown field' => [function (array $d) {
                 $d['extra'] = 1;
                 return $d;
             }, "unknown key 'extra'"],
-            'password at top level' => [function(array $d) {
+            'password at top level' => [function (array $d) {
                 $d['dbpass'] = 'x';
                 return $d;
             }, "forbidden key 'dbpass'"],
-            'secret nested' => [function(array $d) {
+            'secret nested' => [function (array $d) {
                 $d['generator']['api_key'] = 'x';
                 return $d;
             }, "forbidden key 'generator.api_key'"],
-            'wrong type' => [function(array $d) {
+            'wrong type' => [function (array $d) {
                 $d['format'] = '1';
                 return $d;
             }, "'format' must be of type int"],
-            'future format' => [function(array $d) {
+            'future format' => [function (array $d) {
                 $d['format'] = 4;
                 return $d;
             }, 'unsupported format 4'],
-            'installer_auth missing in format 3' => [function(array $d) {
+            'installer_auth missing in format 3' => [function (array $d) {
                 unset($d['installer_auth']);
                 return $d;
             }, "missing key 'installer_auth'"],
-            'installer_auth with an unknown key' => [function(array $d) {
+            'installer_auth with an unknown key' => [function (array $d) {
                 $d['installer_auth']['plaintext'] = 'x';
                 return $d;
             }, "unknown key 'installer_auth.plaintext'"],
-            'installer_auth keyfile with a verifier' => [function(array $d) {
+            'installer_auth keyfile with a verifier' => [function (array $d) {
                 $d['installer_auth'] = ['mode' => 'keyfile', 'verifier' => 'x'];
                 return $d;
             }, "unknown key 'installer_auth.verifier'"],
-            'installer_auth unknown mode' => [function(array $d) {
+            'installer_auth unknown mode' => [function (array $d) {
                 $d['installer_auth']['mode'] = 'none';
                 return $d;
             }, 'installer_auth.mode must be one of'],
-            'installer_auth iterations too low' => [function(array $d) {
+            'installer_auth iterations too low' => [function (array $d) {
                 $d['installer_auth'] = ['mode' => 'password', 'kdf' => 'pbkdf2-sha256', 'iterations' => 1,
                     'salt' => base64_encode(str_repeat('a', 16)), 'verifier' => base64_encode(str_repeat('b', 32))];
                 return $d;
             }, 'installer_auth.iterations must be an integer between'],
-            'phase 1 draft format' => [function(array $d) {
+            'phase 1 draft format' => [function (array $d) {
                 $d['format'] = 1;
                 return $d;
             }, 'unsupported format 1'],
-            'statistics for excluded component' => [function(array $d) {
+            'statistics for excluded component' => [function (array $d) {
                 $d['package_contents']['moodledata'] = false;
                 return $d;
             }, 'statistics.moodledata must be null'],
-            'statistics missing' => [function(array $d) {
+            'statistics missing' => [function (array $d) {
                 $d['statistics']['moodle'] = null;
                 return $d;
             }, 'statistics.moodle is required'],
-            'negative statistic' => [function(array $d) {
+            'negative statistic' => [function (array $d) {
                 $d['statistics']['moodle']['bytes'] = -1;
                 return $d;
             }, 'must not be negative'],
-            'dump missing' => [function(array $d) {
+            'dump missing' => [function (array $d) {
                 $d['database_dump'] = null;
                 return $d;
             }, "'database_dump' is required"],
-            'dump without database' => [function(array $d) {
+            'dump without database' => [function (array $d) {
                 $d['package_contents']['database'] = false;
                 $d['statistics']['database'] = null;
                 return $d;
             }, "'database_dump' must be null"],
-            'dump claims no consistency' => [function(array $d) {
+            'dump claims no consistency' => [function (array $d) {
                 $d['database_dump']['consistency'] = 'none';
                 return $d;
             }, 'consistency'],
-            'secret inside dump object' => [function(array $d) {
+            'secret inside dump object' => [function (array $d) {
                 $d['database_dump']['dbpassword'] = 'x';
                 return $d;
             }, "forbidden key 'database_dump.dbpassword'"],
-            'excluded path traversal' => [function(array $d) {
+            'excluded path traversal' => [function (array $d) {
                 $d['moodledata_excluded'][] = '../etc';
                 return $d;
             }, 'moodledata_excluded'],
-            'wrong product' => [function(array $d) {
+            'wrong product' => [function (array $d) {
                 $d['product'] = 'duplicator';
                 return $d;
             }, "'product' must be"],
-            'bad date' => [function(array $d) {
+            'bad date' => [function (array $d) {
                 $d['created'] = '2026-13-45T00:00:00Z';
                 return $d;
             }, "'created' must be"],
-            'wrong generator' => [function(array $d) {
+            'wrong generator' => [function (array $d) {
                 $d['generator']['component'] = 'tool_other';
                 return $d;
             }, "'generator' must"],
-            'bad moodle version' => [function(array $d) {
+            'bad moodle version' => [function (array $d) {
                 $d['moodle_version'] = '4.1';
                 return $d;
             }, "'moodle_version'"],
-            'unknown db family' => [function(array $d) {
+            'unknown db family' => [function (array $d) {
                 $d['database_family'] = 'sqlite';
                 return $d;
             }, "'database_family'"],
-            'wwwroot trailing slash' => [function(array $d) {
+            'wwwroot trailing slash' => [function (array $d) {
                 $d['wwwroot'] = 'https://lms.example.com/';
                 return $d;
             }, "'wwwroot'"],
-            'wwwroot not http' => [function(array $d) {
+            'wwwroot not http' => [function (array $d) {
                 $d['wwwroot'] = 'file:///etc/passwd';
                 return $d;
             }, "'wwwroot'"],
-            'relative dataroot' => [function(array $d) {
+            'relative dataroot' => [function (array $d) {
                 $d['dataroot'] = '../moodledata';
                 return $d;
             }, "'dataroot' must be an absolute path"],
-            'prefix injection' => [function(array $d) {
+            'prefix injection' => [function (array $d) {
                 $d['table_prefix'] = 'mdl_; DROP TABLE x';
                 return $d;
             }, "'table_prefix'"],
-            'contents not boolean' => [function(array $d) {
+            'contents not boolean' => [function (array $d) {
                 $d['package_contents']['database'] = 'yes';
                 return $d;
             }, 'package_contents.database must be a boolean'],
-            'contents missing key' => [function(array $d) {
+            'contents missing key' => [function (array $d) {
                 unset($d['package_contents']['moodle']);
                 return $d;
             }, 'package_contents.moodle must be a boolean'],
-            'contents empty selection' => [function(array $d) {
+            'contents empty selection' => [function (array $d) {
                 $d['package_contents'] = ['moodle' => false, 'moodledata' => false, 'database' => false];
                 return $d;
             }, 'at least one component'],

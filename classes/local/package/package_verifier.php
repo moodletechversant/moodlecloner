@@ -40,7 +40,6 @@ use tool_moodleclone\local\database\mysql_dumper;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class package_verifier {
-
     /** @var callable|null fn(float $fraction) */
     private $progress;
 

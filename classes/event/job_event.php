@@ -29,7 +29,6 @@ use tool_moodleclone\local\job\job;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class job_event extends \core\event\base {
-
     /**
      * Create the event for a job.
      *

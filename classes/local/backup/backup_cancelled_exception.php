@@ -24,7 +24,6 @@ namespace tool_moodleclone\local\backup;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_cancelled_exception extends backup_exception {
-
     /**
      * Constructor.
      */

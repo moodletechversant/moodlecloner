@@ -27,7 +27,6 @@ namespace tool_moodleclone\local\filesystem;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class invalid_path_exception extends \moodle_exception {
-
     /** @var string Machine readable reason, e.g. "unsaferelativepath". */
     public $reason;
 

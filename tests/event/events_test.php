@@ -33,13 +33,12 @@ use tool_moodleclone\local\job\job;
  * @covers     \tool_moodleclone\event\package_deleted
  */
 class events_test extends \advanced_testcase {
-
     /**
      * Event classes with their "other" data.
      *
      * @return array
      */
-    public function event_provider(): array {
+    public static function event_provider(): array {
         return [
             'started' => [backup_started::class, [], 'c'],
             'completed' => [backup_completed::class, ['size' => 123, 'sha256' => str_repeat('a', 64)], 'c'],

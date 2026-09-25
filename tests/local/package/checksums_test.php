@@ -26,7 +26,6 @@ namespace tool_moodleclone\local\package;
  * @covers     \tool_moodleclone\local\package\checksums
  */
 class checksums_test extends \advanced_testcase {
-
     public function test_serialisation_is_sorted_sha256sum_format(): void {
         $checksums = new checksums();
         $checksums->add('moodle/b.php', hash('sha256', 'b'));
@@ -61,7 +60,7 @@ class checksums_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function malformed_provider(): array {
+    public static function malformed_provider(): array {
         $hash = hash('sha256', 'a');
         return [
             'short hash' => ["abc  moodle/a.php\n"],

@@ -26,7 +26,6 @@ use tool_moodleclone\local\backup\backup_state;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 interface step {
-
     /**
      * The stage this step performs.
      *

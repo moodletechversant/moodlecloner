@@ -28,7 +28,6 @@ use tool_moodleclone\local\backup\options;
  * @covers     \tool_moodleclone\local\job\job
  */
 class job_test extends \advanced_testcase {
-
     /**
      * A new pending job.
      *
@@ -60,7 +59,7 @@ class job_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function transition_provider(): array {
+    public static function transition_provider(): array {
         $cases = [];
         foreach (job::STATUSES as $from) {
             foreach (job::STATUSES as $to) {

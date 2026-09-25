@@ -24,7 +24,6 @@ namespace tool_moodleclone\event;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class package_downloaded extends job_event {
-
     /**
      * Initialise.
      *

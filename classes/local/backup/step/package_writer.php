@@ -29,7 +29,6 @@ use tool_moodleclone\local\backup\stage;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class package_writer implements step {
-
     /**
      * The stage this step performs.
      *

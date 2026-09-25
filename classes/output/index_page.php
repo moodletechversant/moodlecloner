@@ -40,7 +40,6 @@ use tool_moodleclone\local\package\workspace;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class index_page implements named_templatable, renderable {
-
     /** @var int Seconds without a progress update after which a running job is shown as possibly stalled. */
     public const STALLED_AFTER = 600;
 
@@ -76,8 +75,15 @@ class index_page implements named_templatable, renderable {
      * @param workspace|null $workspace
      * @param array|null $worker From worker_status::get().
      */
-    public function __construct(snapshot $snapshot, array $checks, moodle_url $actionurl, ?job $active = null,
-            array $jobs = [], ?workspace $workspace = null, ?array $worker = null) {
+    public function __construct(
+        snapshot $snapshot,
+        array $checks,
+        moodle_url $actionurl,
+        ?job $active = null,
+        array $jobs = [],
+        ?workspace $workspace = null,
+        ?array $worker = null
+    ) {
         $this->snapshot = $snapshot;
         $this->checks = $checks;
         $this->actionurl = $actionurl;
@@ -155,8 +161,10 @@ class index_page implements named_templatable, renderable {
             'needscronsetup' => worker_status::needs_cron_setup($this->worker),
             'cronline' => $this->worker['cronline'],
             'crontab' => $this->worker['crontab'],
-            'installerdownloadurl' => (new moodle_url('/admin/tool/moodleclone/installer-download.php',
-                ['sesskey' => sesskey()]))->out(false),
+            'installerdownloadurl' => (new moodle_url(
+                '/admin/tool/moodleclone/installer-download.php',
+                ['sesskey' => sesskey()]
+            ))->out(false),
             'minpasswordlength' => installer_auth::MIN_LENGTH,
         ];
     }
@@ -215,10 +223,14 @@ class index_page implements named_templatable, renderable {
             'sha256' => (string) $job->get('packagehash'),
             'error' => (string) $job->get('errormessage'),
             'errorstep' => $errorstep && in_array($errorstep, stage::ALL, true) ? stage::get_label($errorstep) : '',
-            'downloadurl' => $available ? (new moodle_url('/admin/tool/moodleclone/download.php',
-                ['id' => $id, 'sesskey' => sesskey()]))->out(false) : null,
-            'downloadchecksumurl' => $available ? (new moodle_url('/admin/tool/moodleclone/download.php',
-                ['id' => $id, 'checksum' => 1, 'sesskey' => sesskey()]))->out(false) : null,
+            'downloadurl' => $available ? (new moodle_url(
+                '/admin/tool/moodleclone/download.php',
+                ['id' => $id, 'sesskey' => sesskey()]
+            ))->out(false) : null,
+            'downloadchecksumurl' => $available ? (new moodle_url(
+                '/admin/tool/moodleclone/download.php',
+                ['id' => $id, 'checksum' => 1, 'sesskey' => sesskey()]
+            ))->out(false) : null,
             'downloadproblem' => $downloadproblem,
             'deletable' => !$job->is_active(),
             'protection' => $protection === null ? '' : get_string('protection:' . $protection, 'tool_moodleclone'),

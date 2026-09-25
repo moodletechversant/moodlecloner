@@ -48,7 +48,6 @@ require_once(__DIR__ . '/../../fixtures/fixture_helper.php');
  * @covers     \tool_moodleclone\local\backup\step\checksum_generator
  */
 class manager_test extends \advanced_testcase {
-
     /**
      * A step that records its execution.
      *
@@ -59,7 +58,7 @@ class manager_test extends \advanced_testcase {
      * @return step
      */
     private function fake_step(string $stage, array &$calls, bool $available = true, ?\Throwable $throw = null): step {
-        return new class($stage, $calls, $available, $throw) implements step {
+        return new class ($stage, $calls, $available, $throw) implements step {
             /** @var string */
             private $stage;
             /** @var array */
@@ -84,14 +83,23 @@ class manager_test extends \advanced_testcase {
                 $this->throw = $throw;
             }
 
+            /**
+             * Get the stage this step implements.
+             */
             public function get_stage(): string {
                 return $this->stage;
             }
 
+            /**
+             * Whether this step can run.
+             */
             public function is_available(): bool {
                 return $this->available;
             }
 
+            /**
+             * Run the step.
+             */
             public function execute(backup_state $state): void {
                 $this->calls[] = $this->stage;
                 if ($this->throw) {
@@ -108,8 +116,12 @@ class manager_test extends \advanced_testcase {
      * @return backup_state
      */
     private function make_state(?redactor $redactor = null): backup_state {
-        return new backup_state((new collector())->collect(), new options(),
-            new memory_logger($redactor ?? new redactor()), 1790257501);
+        return new backup_state(
+            (new collector())->collect(),
+            new options(),
+            new memory_logger($redactor ?? new redactor()),
+            1790257501
+        );
     }
 
     public function test_runs_steps_in_order_and_logs_progress(): void {
@@ -192,7 +204,7 @@ class manager_test extends \advanced_testcase {
 
     public function test_default_pipeline_order_and_availability(): void {
         $manager = manager::create_default();
-        $stages = array_map(function(step $step) {
+        $stages = array_map(function (step $step) {
             return $step->get_stage();
         }, $manager->get_steps());
 
@@ -205,7 +217,7 @@ class manager_test extends \advanced_testcase {
 
     public function test_optional_steps_are_skipped_and_reported(): void {
         $calls = [];
-        $optional = new class($calls) implements optional_step {
+        $optional = new class ($calls) implements optional_step {
             /** @var array */
             private $calls;
 
@@ -218,18 +230,30 @@ class manager_test extends \advanced_testcase {
                 $this->calls = &$calls;
             }
 
+            /**
+             * Get the stage this step implements.
+             */
             public function get_stage(): string {
                 return stage::DATABASE;
             }
 
+            /**
+             * Whether this step can run.
+             */
             public function is_available(): bool {
                 return true;
             }
 
+            /**
+             * Whether the options include this step.
+             */
             public function is_included(options $options): bool {
                 return $options->includedatabase;
             }
 
+            /**
+             * Run the step.
+             */
             public function execute(backup_state $state): void {
                 $this->calls[] = 'database';
             }
@@ -264,7 +288,7 @@ class manager_test extends \advanced_testcase {
         $calls = [];
         $state = $this->make_state();
         $cancel = false;
-        $state->cancelcheck = function() use (&$cancel) {
+        $state->cancelcheck = function () use (&$cancel) {
             return $cancel;
         };
         $first = $this->fake_step(stage::CODE, $calls);
@@ -292,8 +316,10 @@ class manager_test extends \advanced_testcase {
         (new manager([new manifest_generator(), new checksum_generator(), new package_writer()]))->run($state);
 
         $this->assertInstanceOf(manifest::class, $state->manifest);
-        $this->assertSame(['moodle' => false, 'moodledata' => true, 'database' => false],
-            $state->manifest->get('package_contents'));
+        $this->assertSame(
+            ['moodle' => false, 'moodledata' => true, 'database' => false],
+            $state->manifest->get('package_contents')
+        );
         $this->assertContains('cache', $state->manifest->get('moodledata_excluded'));
         $this->assertTrue($state->zip->is_finished());
 
@@ -360,6 +386,9 @@ class manager_test extends \advanced_testcase {
 
     public function test_not_implemented_step_refuses_to_execute(): void {
         $step = new class extends not_implemented_step {
+            /**
+             * Get the stage this step implements.
+             */
             public function get_stage(): string {
                 return stage::ARCHIVE;
             }
@@ -376,7 +405,7 @@ class manager_test extends \advanced_testcase {
      * @return reporter
      */
     private function recording_reporter(array &$events): reporter {
-        return new class($events) implements reporter {
+        return new class ($events) implements reporter {
             /** @var array */
             private $events;
 
@@ -389,21 +418,36 @@ class manager_test extends \advanced_testcase {
                 $this->events = &$events;
             }
 
+            /**
+             * Record that a step started.
+             */
             public function step_started(string $stage, int $index, int $total): void {
                 $this->events[] = "started:{$stage}:{$index}/{$total}";
             }
 
+            /**
+             * Ignore progress updates.
+             */
             public function step_progress(string $stage, float $fraction): void {
             }
 
+            /**
+             * Record that a step completed.
+             */
             public function step_completed(string $stage): void {
                 $this->events[] = "completed:{$stage}";
             }
 
+            /**
+             * Record that a step was skipped.
+             */
             public function step_skipped(string $stage, int $index, int $total): void {
                 $this->events[] = "skipped:{$stage}:{$index}/{$total}";
             }
 
+            /**
+             * Record that a step failed.
+             */
             public function step_failed(string $stage, string $error): void {
                 $this->events[] = "failed:{$stage}";
             }

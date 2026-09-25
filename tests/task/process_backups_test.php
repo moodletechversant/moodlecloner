@@ -31,7 +31,6 @@ use tool_moodleclone\local\job\runner;
  * @covers     \tool_moodleclone\task\process_backups
  */
 class process_backups_test extends \advanced_testcase {
-
     public function test_does_nothing_while_another_backup_holds_the_lock(): void {
         $this->resetAfterTest();
         $job = queue::create(2, job::ORIGIN_WEB, new options());

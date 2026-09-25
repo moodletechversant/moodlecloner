@@ -24,7 +24,6 @@ namespace tool_moodleclone\local\log;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class base_logger implements logger {
-
     /** @var redactor */
     private $redactor;
 

@@ -29,7 +29,6 @@ use tool_moodleclone\local\backup\backup_exception;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class vanished_file_exception extends backup_exception {
-
     /**
      * Constructor.
      *

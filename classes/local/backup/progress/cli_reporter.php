@@ -30,7 +30,6 @@ use tool_moodleclone\local\backup\stage;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class cli_reporter implements reporter {
-
     /** @var resource */
     private $out;
 

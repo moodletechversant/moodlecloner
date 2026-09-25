@@ -27,7 +27,6 @@ namespace tool_moodleclone\local\log;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 interface logger {
-
     /** @var string Normal progress. */
     public const INFO = 'info';
 

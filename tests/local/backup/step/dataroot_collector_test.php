@@ -33,7 +33,6 @@ require_once(__DIR__ . '/../../../fixtures/fixture_helper.php');
  * @covers     \tool_moodleclone\local\backup\step\dataroot_collector
  */
 class dataroot_collector_test extends \advanced_testcase {
-
     /**
      * Run the collector.
      *
@@ -68,8 +67,10 @@ class dataroot_collector_test extends \advanced_testcase {
         $this->assertContains('moodledata/lang/fr/langconfig.php', $names);
         $this->assertContains('moodledata/someplugin/state.json', $names, 'Unknown directories are preserved');
         $this->assertContains('moodledata/.htaccess', $names);
-        foreach (['cache', 'localcache', 'sessions', 'temp', 'trashdir', 'lock', 'muc', 'climaintenance.html',
-                'antivirus_quarantine', 'moodleclone'] as $excluded) {
+        foreach (
+            ['cache', 'localcache', 'sessions', 'temp', 'trashdir', 'lock', 'muc', 'climaintenance.html',
+                'antivirus_quarantine', 'moodleclone'] as $excluded
+        ) {
             foreach ($names as $name) {
                 $this->assertStringStartsNotWith('moodledata/' . $excluded, $name, $excluded);
             }
@@ -120,8 +121,10 @@ class dataroot_collector_test extends \advanced_testcase {
 
         [$names, $state] = $this->collect($dataroot, [], time());
 
-        $this->assertContains('moodledata/filedir/' . substr($recent, 0, 2) . '/' . substr($recent, 2, 2) . '/' . $recent,
-            $names);
+        $this->assertContains(
+            'moodledata/filedir/' . substr($recent, 0, 2) . '/' . substr($recent, 2, 2) . '/' . $recent,
+            $names
+        );
         $this->assertNotContains('moodledata/filedir/00/00/' . str_repeat('0', 40), $names, 'Hash mismatch is skipped');
         $this->assertSame(1, $state->statistics['moodledata']['recovered_from_trash']);
         foreach ($names as $name) {

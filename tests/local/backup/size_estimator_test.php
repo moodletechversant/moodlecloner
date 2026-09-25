@@ -32,7 +32,6 @@ require_once(__DIR__ . '/../../fixtures/fixture_helper.php');
  * @covers     \tool_moodleclone\local\backup\size_estimator
  */
 class size_estimator_test extends \advanced_testcase {
-
     public function test_tree_counts_match_policy(): void {
         $root = make_request_directory();
         fixture_helper::make_tree($root, ['a/b.txt' => '12345', 'c.txt' => '123', 'config.php' => str_repeat('x', 1000)]);

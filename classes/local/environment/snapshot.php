@@ -28,7 +28,6 @@ namespace tool_moodleclone\local\environment;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class snapshot {
-
     /** @var string $CFG->version, e.g. "2022112800.00". */
     public $moodleversion;
 

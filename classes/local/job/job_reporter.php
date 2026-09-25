@@ -32,7 +32,6 @@ use tool_moodleclone\local\log\redactor;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class job_reporter implements reporter {
-
     /** @var int Maximum stored error length. */
     public const MAX_ERROR = 2000;
 

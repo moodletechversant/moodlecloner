@@ -43,10 +43,9 @@ use tool_moodleclone\local\job\job;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements
-        \core_privacy\local\metadata\provider,
-        \core_privacy\local\request\plugin\provider,
-        \core_privacy\local\request\core_userlist_provider {
-
+    \core_privacy\local\metadata\provider,
+    \core_privacy\local\request\core_userlist_provider,
+    \core_privacy\local\request\plugin\provider {
     /**
      * Describe stored data.
      *
@@ -104,8 +103,13 @@ class provider implements
             if (!$context instanceof \context_system) {
                 continue;
             }
-            $records = $DB->get_records_select(job::TABLE, 'userid = :userid OR usermodified = :usermodified',
-                ['userid' => $userid, 'usermodified' => $userid], 'id ASC', 'id, status, origin, timecreated, timefinished');
+            $records = $DB->get_records_select(
+                job::TABLE,
+                'userid = :userid OR usermodified = :usermodified',
+                ['userid' => $userid, 'usermodified' => $userid],
+                'id ASC',
+                'id, status, origin, timecreated, timefinished'
+            );
             if (!$records) {
                 continue;
             }
@@ -118,8 +122,10 @@ class provider implements
                     'timefinished' => $record->timefinished ? transform::datetime($record->timefinished) : null,
                 ];
             }
-            writer::with_context($context)->export_data([get_string('pluginname', 'tool_moodleclone')],
-                (object) ['jobs' => $jobs]);
+            writer::with_context($context)->export_data(
+                [get_string('pluginname', 'tool_moodleclone')],
+                (object) ['jobs' => $jobs]
+            );
         }
     }
 
@@ -188,7 +194,10 @@ class provider implements
      */
     private static function user_has_jobs(int $userid): bool {
         global $DB;
-        return $DB->record_exists_select(job::TABLE, 'userid = :userid OR usermodified = :usermodified',
-            ['userid' => $userid, 'usermodified' => $userid]);
+        return $DB->record_exists_select(
+            job::TABLE,
+            'userid = :userid OR usermodified = :usermodified',
+            ['userid' => $userid, 'usermodified' => $userid]
+        );
     }
 }

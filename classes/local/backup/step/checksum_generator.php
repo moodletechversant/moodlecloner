@@ -34,7 +34,6 @@ use tool_moodleclone\local\package\layout;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class checksum_generator implements step {
-
     /**
      * The stage this step performs.
      *

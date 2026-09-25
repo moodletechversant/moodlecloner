@@ -27,7 +27,6 @@ namespace tool_moodleclone\local\environment;
  * @covers     \tool_moodleclone\local\environment\snapshot
  */
 class collector_test extends \advanced_testcase {
-
     /**
      * Fake configuration.
      *

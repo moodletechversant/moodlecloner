@@ -38,7 +38,6 @@ require_once(__DIR__ . '/fixtures/installer_fixture.php');
  * @covers     \MoodleCloneInstaller\auth_store
  */
 class installer_authorization_test extends \basic_testcase {
-
     /** @var string */
     private const PASSWORD = 'correct horse battery staple';
 
@@ -60,7 +59,7 @@ class installer_authorization_test extends \basic_testcase {
      * @return auth_store
      */
     private function store(): auth_store {
-        return new auth_store($this->dir . '/auth.php', function() {
+        return new auth_store($this->dir . '/auth.php', function () {
             return $this->now;
         });
     }
@@ -91,7 +90,8 @@ class installer_authorization_test extends \basic_testcase {
     }
 
     public function test_the_installer_and_the_plugin_agree_on_the_algorithm(): void {
-        // The installer is standalone, so it carries its own copy of the verification; it must accept exactly what the plugin makes.
+        // The installer is standalone, so it carries its own copy of the verification;
+        // it must accept exactly what the plugin makes.
         $plugin = installer_auth::from_password(self::PASSWORD);
         $this->assertTrue(auth_verifier::verify_password($plugin->to_array(), self::PASSWORD));
         $this->assertSame([], auth_verifier::validate($plugin->to_array()));
@@ -110,12 +110,14 @@ class installer_authorization_test extends \basic_testcase {
     }
 
     /**
+     * Package options whose installer_auth description makes the package unusable.
+     *
      * @return array
      */
-    public function unusable_package_provider(): array {
+    public static function unusable_package_provider(): array {
         $good = installer_auth::from_password(self::PASSWORD)->to_array();
         return [
-            'installer_auth missing in format 3' => [['manifest' => function(array $m) {
+            'installer_auth missing in format 3' => [['manifest' => function (array $m) {
                 unset($m['installer_auth']);
                 return $m;
             }]],
@@ -125,11 +127,11 @@ class installer_authorization_test extends \basic_testcase {
             'iterations too weak' => [['installer_auth' => ['iterations' => 1] + $good]],
             'other kdf' => [['installer_auth' => ['kdf' => 'md5'] + $good]],
             'extra key' => [['installer_auth' => $good + ['note' => 'x']]],
-            'unknown format' => [['manifest' => function(array $m) {
+            'unknown format' => [['manifest' => function (array $m) {
                 $m['format'] = 9;
                 return $m;
             }]],
-            'not a moodle clone package' => [['manifest' => function(array $m) {
+            'not a moodle clone package' => [['manifest' => function (array $m) {
                 $m['product'] = 'other';
                 return $m;
             }]],
@@ -278,7 +280,10 @@ class installer_authorization_test extends \basic_testcase {
         $source = (string) file_get_contents(__DIR__ . '/../installer/installer.php');
         preg_match_all('/\$_POST\[\'password\'\]/', $source, $uses);
         $this->assertSame(1, count($uses[0]), 'the password is read from the request exactly once');
-        $this->assertSame(0, preg_match('/(file_put_contents|fwrite|error_log|\$_SESSION|\$this->state|\$_COOKIE)[^;\n]*\$password/', $source));
+        $this->assertSame(0, preg_match(
+            '/(file_put_contents|fwrite|error_log|\$_SESSION|\$this->state|\$_COOKIE)[^;\n]*\$password/',
+            $source
+        ));
     }
 
     // 6. An installer session cannot be forged.
@@ -324,7 +329,10 @@ class installer_authorization_test extends \basic_testcase {
         $store = $this->store();
         $token = $store->create_session(['p.zip'], 'ua');
         $this->now += auth_store::IDLE_TTL - 1;
-        $this->assertNotNull($store->session_packages($token, 'ua'), 'a request just before the idle limit is fine (and renews it)');
+        $this->assertNotNull(
+            $store->session_packages($token, 'ua'),
+            'a request just before the idle limit is fine (and renews it)'
+        );
         $this->now += auth_store::IDLE_TTL - 1;
         $this->assertNotNull($store->session_packages($token, 'ua'));
         $this->now += auth_store::IDLE_TTL + 1;

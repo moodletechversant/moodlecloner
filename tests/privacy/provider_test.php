@@ -33,7 +33,6 @@ use tool_moodleclone\local\job\job;
  * @covers     \tool_moodleclone\privacy\provider
  */
 class provider_test extends \core_privacy\tests\provider_testcase {
-
     /**
      * Two users, each with a job.
      *

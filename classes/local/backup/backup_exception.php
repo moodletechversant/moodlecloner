@@ -28,7 +28,6 @@ namespace tool_moodleclone\local\backup;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_exception extends \moodle_exception {
-
     /** @var string Short reason code, e.g. "externalsymlink" (Exception::$code is left untouched). */
     public $reason;
 

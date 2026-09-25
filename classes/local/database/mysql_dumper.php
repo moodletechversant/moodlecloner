@@ -56,7 +56,6 @@ use tool_moodleclone\local\backup\backup_exception;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mysql_dumper {
-
     /** @var string Dump format name recorded in the manifest. */
     public const FORMAT = 'mysql';
 
@@ -214,12 +213,18 @@ class mysql_dumper {
             if (in_array(substr($name, strlen($this->prefix)), self::STRUCTURE_ONLY, true)) {
                 continue;
             }
-            $this->dump_rows($name, $info['columns'], $sink, $rows, $maxstatement,
-                function() use ($progress, &$rows, $estimated) {
+            $this->dump_rows(
+                $name,
+                $info['columns'],
+                $sink,
+                $rows,
+                $maxstatement,
+                function () use ($progress, &$rows, $estimated) {
                     if ($progress !== null) {
                         $progress(min(0.99, $rows / $estimated));
                     }
-                });
+                }
+            );
         }
 
         $this->check_schema_unchanged($definitions);
@@ -277,11 +282,17 @@ class mysql_dumper {
      * @param callable $tick Called every 500 rows.
      * @return void
      */
-    private function dump_rows(string $name, array $columns, sink $sink, int &$rows, int &$maxstatement,
-            callable $tick): void {
+    private function dump_rows(
+        string $name,
+        array $columns,
+        sink $sink,
+        int &$rows,
+        int &$maxstatement,
+        callable $tick
+    ): void {
         $unprefixed = substr($name, strlen($this->prefix));
         if (!preg_match('/^[a-z][a-z0-9_]*$/', $unprefixed)) {
-            // export_table_recordset() only handles Moodle-style names.
+            // The export_table_recordset() call only handles Moodle-style names.
             throw new backup_exception('dbtablename', $name);
         }
         $insert = 'INSERT INTO ' . self::quote_identifier($name) . ' (' .
@@ -289,7 +300,7 @@ class mysql_dumper {
 
         $values = '';
         $count = 0;
-        $flush = function() use ($sink, $insert, &$values, &$count, &$maxstatement) {
+        $flush = function () use ($sink, $insert, &$values, &$count, &$maxstatement) {
             if ($count === 0) {
                 return;
             }
@@ -316,8 +327,10 @@ class mysql_dumper {
                     $tuple .= ($i === 0 ? '(' : ',') . self::encode_value($record->$key, $column['kind'], $this->charset);
                 }
                 $tuple .= ')';
-                if ($count > 0 && ($count >= self::MAX_STATEMENT_ROWS ||
-                        strlen($insert) + strlen($values) + strlen($tuple) + 3 > self::MAX_STATEMENT_BYTES)) {
+                if (
+                    $count > 0 && ($count >= self::MAX_STATEMENT_ROWS ||
+                        strlen($insert) + strlen($values) + strlen($tuple) + 3 > self::MAX_STATEMENT_BYTES)
+                ) {
                     $flush();
                 }
                 $values .= ($count === 0 ? '' : ',') . $tuple;
@@ -553,6 +566,7 @@ class mysql_dumper {
      * @return string
      */
     public static function quote_identifier(string $name): string {
+        // phpcs:ignore moodle.Strings.ForbiddenStrings.Found -- MySQL quotes identifiers with backticks.
         return '`' . str_replace('`', '``', $name) . '`';
     }
 }

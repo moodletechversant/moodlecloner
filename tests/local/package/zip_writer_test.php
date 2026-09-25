@@ -29,7 +29,6 @@ use tool_moodleclone\local\backup\backup_exception;
  * @covers     \tool_moodleclone\local\package\zip_entry_stream
  */
 class zip_writer_test extends \advanced_testcase {
-
     /**
      * Write a mixed archive.
      *
@@ -65,7 +64,7 @@ class zip_writer_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function zip64_provider(): array {
+    public static function zip64_provider(): array {
         return ['standard' => [false], 'forced zip64' => [true]];
     }
 
@@ -128,7 +127,7 @@ class zip_writer_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function unsafe_name_provider(): array {
+    public static function unsafe_name_provider(): array {
         return [['../evil.php'], ['/etc/passwd'], ['moodle\\..\\x'], ["a\0b"], ["bad\xff\xfeutf8"]];
     }
 
@@ -180,7 +179,7 @@ class zip_writer_test extends \advanced_testcase {
         file_put_contents($dir . '/big.bin', str_repeat('x', 3 * zip_writer::CHUNK + 5));
         $writer = new zip_writer($dir . '/out.zip', $dir . '/cd.spool');
         $seen = 0;
-        $writer->add_file('moodle/big.bin', $dir . '/big.bin', true, function(int $bytes) use (&$seen) {
+        $writer->add_file('moodle/big.bin', $dir . '/big.bin', true, function (int $bytes) use (&$seen) {
             $seen += $bytes;
         });
         $this->assertSame(3 * zip_writer::CHUNK + 5, $seen);

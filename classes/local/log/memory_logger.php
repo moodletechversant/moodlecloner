@@ -24,7 +24,6 @@ namespace tool_moodleclone\local\log;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class memory_logger extends base_logger {
-
     /** @var array[] Each entry is ['level' => string, 'message' => string]. */
     private $entries = [];
 

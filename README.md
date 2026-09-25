@@ -519,7 +519,7 @@ vendor/bin/phpunit --testsuite tool_moodleclone_testsuite
 | `local/filesystem/path_validator_test`, `tree_walker_test` | traversal, link-target resolution, internal/external/chained symlinks, pruning, unsafe names, special files | – |
 | `local/backup/content_policy_test`, `size_estimator_test`, `preflight_test`, `manager_test` | policies incl. `$CFG`-relocated dirs, estimate formula, disk/engine/driver/workspace checks, step order, skipping, failure, cancellation | – |
 | `local/backup/step/code_collector_test`, `dataroot_collector_test` | `config.php` excluded, nested files, external symlinks rejected, persistent/excluded/unknown dirs, custom filedir, trash recovery | – |
-| `local/log/redactor_test`, `local/environment/collector_test`, `access_test` | redaction, snapshot, capability | DB (access) |
+| `local/log/redactor_test`, `local/environment/collector_test`, `local/access_test` | redaction, snapshot, capability | DB (access) |
 | `local/database/mysql_dumper_test` | real dump → restore round trip (quotes, NUL, emoji, binary, NULL, decimals, indexes), snapshot isolation, MyISAM refused, DDL blocked or detected, new table detected, sessions structure only, encoding and injection | MySQL |
 | `local/job/job_test`, `queue_test` | creation, the full transition matrix, conditional updates, concurrent-job prevention, cancel, delete | DB |
 | `local/job/runner_test` | end-to-end run on fixture trees, failure cleanup, preflight failure, cancellation, recovery, shutdown handler, exclusive lock, progress weights | DB (+MySQL for two cases) |

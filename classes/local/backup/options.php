@@ -27,7 +27,6 @@ use tool_moodleclone\local\package\manifest;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class options {
-
     /** @var bool Include the Moodle code tree. */
     public $includecode = true;
 

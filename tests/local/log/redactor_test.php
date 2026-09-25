@@ -28,7 +28,6 @@ namespace tool_moodleclone\local\log;
  * @covers     \tool_moodleclone\local\log\memory_logger
  */
 class redactor_test extends \basic_testcase {
-
     public function test_exact_secrets_are_masked(): void {
         $redactor = new redactor(['S3cr3t!', '']);
         $this->assertSame('Connecting with [redacted] failed', $redactor->redact('Connecting with S3cr3t! failed'));
@@ -45,7 +44,7 @@ class redactor_test extends \basic_testcase {
      *
      * @return array
      */
-    public function pair_provider(): array {
+    public static function pair_provider(): array {
         return [
             ['mysqldump --password=hunter2 moodle', 'mysqldump --password=[redacted] moodle'],
             ['dbpass: hunter2', 'dbpass: [redacted]'],

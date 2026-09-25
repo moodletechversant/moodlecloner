@@ -16,6 +16,8 @@
 
 namespace tool_moodleclone;
 
+// phpcs:disable moodle.Strings.ForbiddenStrings.Found -- The fixture dump is MySQL, which quotes identifiers with backticks.
+
 /**
  * Loads the standalone installer and builds packages for it, for tests.
  *
@@ -28,7 +30,6 @@ namespace tool_moodleclone;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class installer_fixture {
-
     /** @var string Where the installer copy lives. */
     private static $dir = null;
 
@@ -44,7 +45,7 @@ class installer_fixture {
             copy(__DIR__ . '/../../installer/installer.php', self::$dir . '/installer.php');
             define('MOODLECLONE_INSTALLER_NO_MAIN', true);
             require_once(self::$dir . '/installer.php');
-            register_shutdown_function(function() {
+            register_shutdown_function(function () {
                 self::remove_tree(self::$dir);
             });
         }
@@ -59,7 +60,7 @@ class installer_fixture {
     public static function make_dir(): string {
         $dir = sys_get_temp_dir() . '/mci-fixture-' . getmypid() . '-' . bin2hex(random_bytes(4));
         mkdir($dir, 0700, true);
-        register_shutdown_function(function() use ($dir) {
+        register_shutdown_function(function () use ($dir) {
             self::remove_tree($dir);
         });
         return $dir;
@@ -115,7 +116,7 @@ class installer_fixture {
         $zip = new \ZipArchive();
         $zip->open($path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
         $listed = [];
-        $add = function(string $name, string $content) use ($zip, &$listed) {
+        $add = function (string $name, string $content) use ($zip, &$listed) {
             $zip->addFromString($name, $content);
             $listed[$name] = hash('sha256', $content);
         };

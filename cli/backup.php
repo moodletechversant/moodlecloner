@@ -123,8 +123,14 @@ cli_heading(get_string('pluginname', 'tool_moodleclone'));
 $snapshot = (new collector())->collect();
 try {
     $estimate = (new size_estimator())->estimate(source_paths::from_config(), $options, $DB, $workspace->get_base());
-    $checks = (new preflight($snapshot, manager::create_default(), $estimate, $options, null,
-        $workspace->get_base()))->run();
+    $checks = (new preflight(
+        $snapshot,
+        manager::create_default(),
+        $estimate,
+        $options,
+        null,
+        $workspace->get_base()
+    ))->run();
 } catch (moodle_exception $e) {
     $checks = [['check' => 'sources', 'status' => preflight::ERROR,
         'message' => redactor::from_config()->redact($e->getMessage() . (empty($e->debuginfo) ? '' : ' (' . $e->debuginfo . ')'))]];
@@ -170,7 +176,7 @@ if (queue::next_pending() === null) {
         $password = tool_moodleclone_cli_read_password((bool) $params['installer-password-stdin']);
         $problems = installer_auth::password_problems($password['first'], $password['second']);
         if ($problems) {
-            cli_error(implode(' ', array_map(function($code) {
+            cli_error(implode(' ', array_map(function ($code) {
                 return get_string('error:installerpassword_' . $code, 'tool_moodleclone', installer_auth::MIN_LENGTH);
             }, $problems)));
         }

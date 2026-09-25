@@ -30,7 +30,6 @@ use moodle_database;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class collector {
-
     /** @var string[] Extensions every backup needs, independent of database driver. */
     public const REQUIRED_EXTENSIONS = ['zip', 'zlib', 'json', 'hash'];
 

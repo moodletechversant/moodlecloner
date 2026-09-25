@@ -29,7 +29,6 @@ namespace tool_moodleclone\local\log;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class redactor {
-
     /** @var string Replacement text. */
     public const MASK = '[redacted]';
 
@@ -37,7 +36,8 @@ class redactor {
     public const SECRET_CONFIG = ['dbpass', 'passwordsaltmain', 'cronremotepassword'];
 
     /** @var string Matches "key=value" / "key: value" pairs whose key names a secret. */
-    private const PAIR_PATTERN = '/\b((?:db)?pass(?:word|wd)?|pwd|secret|token|api[_-]?key|salt)(\s*[=:]\s*)(["\']?)[^\s"\',;&)]+\3/i';
+    private const PAIR_PATTERN = '/\b((?:db)?pass(?:word|wd)?|pwd|secret|token|api[_-]?key|salt)' .
+        '(\s*[=:]\s*)(["\']?)[^\s"\',;&)]+\3/i';
 
     /** @var string MySQL "Access denied for user 'name'@'host'": hides the database account. */
     private const DB_USER_PATTERN = "/user '[^']*'@'[^']*'/i";
@@ -60,7 +60,7 @@ class redactor {
             }
         }
         // Replace longer secrets first so one secret containing another is fully masked.
-        usort($this->secrets, function(string $a, string $b): int {
+        usort($this->secrets, function (string $a, string $b): int {
             return strlen($b) <=> strlen($a);
         });
     }

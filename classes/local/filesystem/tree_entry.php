@@ -25,7 +25,6 @@ namespace tool_moodleclone\local\filesystem;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class tree_entry {
-
     /** @var string Regular file. */
     public const FILE = 'file';
 

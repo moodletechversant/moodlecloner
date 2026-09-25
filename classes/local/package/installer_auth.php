@@ -45,7 +45,6 @@ namespace tool_moodleclone\local\package;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class installer_auth {
-
     /** @var string Mode: the administrator chose an installer password. */
     public const MODE_PASSWORD = 'password';
 
@@ -172,8 +171,13 @@ class installer_auth {
         if ($data['kdf'] !== self::KDF) {
             $errors[] = "installer_auth.kdf must be '" . self::KDF . "'";
         }
-        if (!is_int($data['iterations']) || $data['iterations'] < self::MIN_ITERATIONS || $data['iterations'] > self::MAX_ITERATIONS) {
-            $errors[] = 'installer_auth.iterations must be an integer between ' . self::MIN_ITERATIONS . ' and ' . self::MAX_ITERATIONS;
+        if (
+            !is_int($data['iterations']) ||
+            $data['iterations'] < self::MIN_ITERATIONS ||
+            $data['iterations'] > self::MAX_ITERATIONS
+        ) {
+            $errors[] = 'installer_auth.iterations must be an integer between ' . self::MIN_ITERATIONS .
+                ' and ' . self::MAX_ITERATIONS;
         }
         foreach (['salt' => self::SALT_BYTES, 'verifier' => self::VERIFIER_BYTES] as $key => $bytes) {
             $decoded = is_string($data[$key]) ? base64_decode($data[$key], true) : false;
@@ -206,8 +210,10 @@ class installer_auth {
             $problems[] = 'short';
         } else if (strlen($password) > self::MAX_BYTES) {
             $problems[] = 'long';
-        } else if (count(array_unique(preg_split('//u', $password, -1, PREG_SPLIT_NO_EMPTY) ?: str_split($password))) <
-                self::MIN_DISTINCT) {
+        } else if (
+            count(array_unique(preg_split('//u', $password, -1, PREG_SPLIT_NO_EMPTY) ?: str_split($password))) <
+                self::MIN_DISTINCT
+        ) {
             $problems[] = 'weak';
         }
         return $problems;

@@ -24,7 +24,6 @@ namespace tool_moodleclone\local\backup\progress;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class null_reporter implements reporter {
-
     /**
      * Ignored.
      *

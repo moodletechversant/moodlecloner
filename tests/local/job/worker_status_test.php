@@ -26,7 +26,6 @@ namespace tool_moodleclone\local\job;
  * @covers     \tool_moodleclone\local\job\worker_status
  */
 class worker_status_test extends \advanced_testcase {
-
     public function test_ready_when_cron_ran_recently(): void {
         $this->resetAfterTest();
         set_config('lastcronstart', time() - 30, 'tool_task');

@@ -35,7 +35,6 @@ use tool_moodleclone\local\package\zip_writer;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class fixture_helper {
-
     /**
      * Create a tree. Spec values: string = file content, null = directory, ['link' => target] = symlink.
      *
@@ -106,12 +105,21 @@ class fixture_helper {
      * @param bool $forcezip64
      * @return backup_state
      */
-    public static function make_state(string $dirroot, string $dataroot, ?options $options = null, array $extra = [],
-            bool $forcezip64 = false): backup_state {
+    public static function make_state(
+        string $dirroot,
+        string $dataroot,
+        ?options $options = null,
+        array $extra = [],
+        bool $forcezip64 = false
+    ): backup_state {
         global $DB;
         $cfg = self::config($dirroot, $dataroot, $extra);
-        $state = new backup_state((new collector($cfg, $DB))->collect(), $options ?? new options(),
-            new memory_logger(new redactor()), time());
+        $state = new backup_state(
+            (new collector($cfg, $DB))->collect(),
+            $options ?? new options(),
+            new memory_logger(new redactor()),
+            time()
+        );
         $state->sources = source_paths::from_config($cfg);
         $state->workspace = new workspace($dataroot);
         $state->workdir = $state->workspace->create_work_dir(1);

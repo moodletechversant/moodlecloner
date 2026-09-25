@@ -16,6 +16,8 @@
 
 namespace tool_moodleclone\local\database;
 
+// phpcs:disable moodle.Strings.ForbiddenStrings.Found -- The SQL under test is MySQL, which quotes identifiers with backticks.
+
 use tool_moodleclone\local\backup\backup_exception;
 
 /**
@@ -30,7 +32,6 @@ use tool_moodleclone\local\backup\backup_exception;
  * @covers     \tool_moodleclone\local\database\gzip_sink
  */
 class mysql_dumper_test extends \advanced_testcase {
-
     /** @var string Test table (without prefix). */
     private const TABLE = 'tool_moodleclone_dumptest';
 
@@ -102,10 +103,16 @@ class mysql_dumper_test extends \advanced_testcase {
             /** @var string */
             public $data = '';
 
+            /**
+             * Collect the written data in memory.
+             */
             public function write(string $data): void {
                 $this->data .= $data;
             }
 
+            /**
+             * Nothing to close for an in-memory sink.
+             */
             public function close(): void {
             }
         };
@@ -144,7 +151,7 @@ class mysql_dumper_test extends \advanced_testcase {
     private function restore(string $sql): void {
         global $DB;
         foreach (explode(";\n", $sql) as $statement) {
-            $lines = array_filter(explode("\n", $statement), function($line) {
+            $lines = array_filter(explode("\n", $statement), function ($line) {
                 return strpos($line, '--') !== 0 && trim($line) !== '';
             });
             $statement = trim(implode("\n", $lines));
@@ -179,15 +186,17 @@ class mysql_dumper_test extends \advanced_testcase {
         $after = $DB->get_records(self::TABLE, null, 'id');
         $this->assertEquals($before, $after);
         $this->assertSame($before[$ids[0]]->data, $after[$ids[0]]->data, 'Binary data is byte-identical');
-        $this->assertTrue($DB->get_manager()->index_exists(new \xmldb_table(self::TABLE),
-            new \xmldb_index('name', XMLDB_INDEX_NOTUNIQUE, ['name'])), 'Indexes are restored');
+        $this->assertTrue($DB->get_manager()->index_exists(
+            new \xmldb_table(self::TABLE),
+            new \xmldb_index('name', XMLDB_INDEX_NOTUNIQUE, ['name'])
+        ), 'Indexes are restored');
     }
 
     public function test_snapshot_excludes_rows_written_after_it_started(): void {
         global $DB;
         $DB->insert_record(self::TABLE, (object) ['name' => 'before snapshot']);
 
-        [$sql] = $this->dump([self::TABLE], function() use ($DB) {
+        [$sql] = $this->dump([self::TABLE], function () use ($DB) {
             // Committed by the main connection while the dump transaction is open.
             $DB->insert_record(self::TABLE, (object) ['name' => 'after snapshot']);
         });
@@ -214,7 +223,7 @@ class mysql_dumper_test extends \advanced_testcase {
         $altered = false;
         $DB->execute('SET SESSION lock_wait_timeout = 2');
         try {
-            $this->dump([self::TABLE], function() use ($DB, &$altered) {
+            $this->dump([self::TABLE], function () use ($DB, &$altered) {
                 try {
                     $DB->execute('ALTER TABLE {' . self::TABLE . '} ADD COLUMN extra INT NULL');
                     $altered = true;
@@ -239,7 +248,7 @@ class mysql_dumper_test extends \advanced_testcase {
         $extra->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
         $extra->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
         try {
-            $this->dump([self::TABLE, self::TABLE . '2'], function() use ($DB, $extra) {
+            $this->dump([self::TABLE, self::TABLE . '2'], function () use ($DB, $extra) {
                 $DB->get_manager()->create_table($extra);
             });
             $this->fail('New table not detected');
@@ -267,7 +276,7 @@ class mysql_dumper_test extends \advanced_testcase {
 
     public function test_gzip_sink_output_decompresses(): void {
         $compressed = '';
-        $sink = new gzip_sink(function(string $data) use (&$compressed) {
+        $sink = new gzip_sink(function (string $data) use (&$compressed) {
             $compressed .= $data;
         });
         $sink->write(str_repeat('INSERT INTO x VALUES (1);' . "\n", 100000));
@@ -280,7 +289,7 @@ class mysql_dumper_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function encode_provider(): array {
+    public static function encode_provider(): array {
         return [
             'null' => [null, 'string', 'NULL'],
             'int' => ['-42', 'int', '-42'],
@@ -310,7 +319,7 @@ class mysql_dumper_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function bad_number_provider(): array {
+    public static function bad_number_provider(): array {
         return [['1; DROP TABLE x', 'int'], ['1 OR 1=1', 'int'], ['0x41', 'int'], ['1e5', 'decimal'], ['NaN', 'float']];
     }
 

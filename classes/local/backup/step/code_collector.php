@@ -35,7 +35,6 @@ use tool_moodleclone\local\package\manifest;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class code_collector extends tree_collector {
-
     /**
      * The stage this step performs.
      *
@@ -66,10 +65,18 @@ class code_collector extends tree_collector {
         $done = 0;
         $total = (int) ($state->estimate[manifest::CONTENT_MOODLE]['bytes'] ?? 0);
         $policy = content_policy::for_site_code($state->sources);
-        $this->collect_tree($state, $state->sources->dirroot, layout::CODE_DIR, $policy->get_filter(),
-            function() {
+        $this->collect_tree(
+            $state,
+            $state->sources->dirroot,
+            layout::CODE_DIR,
+            $policy->get_filter(),
+            function () {
                 return true;
-            }, $stats, $total, $done);
+            },
+            $stats,
+            $total,
+            $done
+        );
         $state->statistics[manifest::CONTENT_MOODLE] = $stats;
     }
 }

@@ -29,7 +29,6 @@ use context_system;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class access {
-
     /** @var string The capability that grants use of the tool. */
     public const CAPABILITY = 'tool/moodleclone:manage';
 

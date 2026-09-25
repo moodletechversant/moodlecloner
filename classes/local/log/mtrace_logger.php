@@ -27,7 +27,6 @@ namespace tool_moodleclone\local\log;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mtrace_logger extends base_logger {
-
     /**
      * Print the message with a timestamp and level.
      *

@@ -28,7 +28,6 @@ use tool_moodleclone\local\filesystem\invalid_path_exception;
  * @covers     \tool_moodleclone\local\package\layout
  */
 class layout_test extends \basic_testcase {
-
     public function test_filename_uses_utc_timestamp(): void {
         // 2026-09-24 13:45:01 UTC.
         $this->assertSame('moodle-clone-2026-09-24-134501.zip', layout::filename(1790257501));

@@ -33,13 +33,12 @@ require_once(__DIR__ . '/../../fixtures/fixture_helper.php');
  * @covers     \tool_moodleclone\local\backup\source_paths
  */
 class content_policy_test extends \basic_testcase {
-
     /**
      * Dataroot paths and whether they are packaged.
      *
      * @return array
      */
-    public function dataroot_provider(): array {
+    public static function dataroot_provider(): array {
         return [
             'filedir content' => ['filedir/0a/1b/0a1b2c', true],
             'language packs' => ['lang/fr/langconfig.php', true],
@@ -95,8 +94,11 @@ class content_policy_test extends \basic_testcase {
     public function test_site_dataroot_excludes_configured_runtime_dirs(): void {
         $dataroot = make_request_directory();
         fixture_helper::make_tree($dataroot, ['mytemp' => null, 'mycache' => null, 'keep' => null]);
-        $paths = source_paths::from_config(fixture_helper::config(make_request_directory(), $dataroot,
-            ['tempdir' => $dataroot . '/mytemp', 'cachedir' => $dataroot . '/mycache', 'localcachedir' => '/elsewhere']));
+        $paths = source_paths::from_config(fixture_helper::config(
+            make_request_directory(),
+            $dataroot,
+            ['tempdir' => $dataroot . '/mytemp', 'cachedir' => $dataroot . '/mycache', 'localcachedir' => '/elsewhere']
+        ));
 
         $policy = content_policy::for_site_dataroot($paths);
 
@@ -104,8 +106,10 @@ class content_policy_test extends \basic_testcase {
         $this->assertFalse($policy->should_include('mycache'));
         $this->assertTrue($policy->should_include('keep/a'));
         $this->assertTrue($policy->should_include('mytemporary/a'), 'Prefixes match whole path segments only');
-        $this->assertSame(['mycache', 'mytemp'], array_values(array_intersect($policy->describe_exclusions(),
-            ['mytemp', 'mycache'])));
+        $this->assertSame(['mycache', 'mytemp'], array_values(array_intersect(
+            $policy->describe_exclusions(),
+            ['mytemp', 'mycache']
+        )));
     }
 
     public function test_site_code_excludes_nested_data(): void {
@@ -122,8 +126,11 @@ class content_policy_test extends \basic_testcase {
 
     public function test_custom_filedir_excludes_default_location(): void {
         $dataroot = make_request_directory();
-        $paths = source_paths::from_config(fixture_helper::config(make_request_directory(), $dataroot,
-            ['filedir' => make_request_directory()]));
+        $paths = source_paths::from_config(fixture_helper::config(
+            make_request_directory(),
+            $dataroot,
+            ['filedir' => make_request_directory()]
+        ));
 
         $this->assertTrue($paths->customfiledir);
         $this->assertFalse(content_policy::for_site_dataroot($paths)->should_include('filedir/aa/bb/x'));

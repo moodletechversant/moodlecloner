@@ -26,7 +26,6 @@ namespace tool_moodleclone\local\environment;
  * @covers     \tool_moodleclone\local\environment\os_identity
  */
 class os_identity_test extends \advanced_testcase {
-
     /**
      * Skip without posix.
      *

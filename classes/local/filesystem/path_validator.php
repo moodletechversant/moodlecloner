@@ -33,7 +33,6 @@ namespace tool_moodleclone\local\filesystem;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class path_validator {
-
     /**
      * Whether a package-relative path is safe.
      *
@@ -139,8 +138,12 @@ class path_validator {
      * @param string|null $altroot Configured root when it differs from the real path.
      * @return string|null Target relative to the root ('' for the root itself), or null when it leaves the root.
      */
-    public static function resolve_link_target(string $root, string $linkrelative, string $target,
-            ?string $altroot = null): ?string {
+    public static function resolve_link_target(
+        string $root,
+        string $linkrelative,
+        string $target,
+        ?string $altroot = null
+    ): ?string {
         if ($target === '' || strpos($target, "\0") !== false) {
             return null;
         }

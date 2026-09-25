@@ -16,6 +16,8 @@
 
 namespace tool_moodleclone;
 
+// phpcs:disable moodle.Strings.ForbiddenStrings.Found -- The SQL under test is MySQL, which quotes identifiers with backticks.
+
 use MoodleCloneInstaller\installer_exception;
 use MoodleCloneInstaller\manifest_check;
 use MoodleCloneInstaller\moodle_steps;
@@ -44,7 +46,6 @@ require_once(__DIR__ . '/fixtures/installer_fixture.php');
  * @covers     \MoodleCloneInstaller\moodle_steps
  */
 class installer_security_test extends \basic_testcase {
-
     /** @var string */
     private $dir;
 
@@ -76,6 +77,8 @@ class installer_security_test extends \basic_testcase {
     // Hostile packages: scan() must refuse each, and accept a good one.
 
     /**
+     * Build a package from the fixture and run the installer's package scan on it.
+     *
      * @param array $options installer_fixture::build_package() options.
      * @return array Package information.
      */
@@ -95,9 +98,11 @@ class installer_security_test extends \basic_testcase {
     }
 
     /**
+     * Package options that must be refused, with the message each refusal must contain.
+     *
      * @return array
      */
-    public function hostile_package_provider(): array {
+    public static function hostile_package_provider(): array {
         return [
             'path traversal' => [['extra' => ['moodle/../../evil.php' => 'x']], 'Unsafe entry name'],
             'traversal at the start' => [['extra' => ['../evil.php' => 'x']], 'Unsafe entry name'],
@@ -106,28 +111,31 @@ class installer_security_test extends \basic_testcase {
             'symbolic link' => [['links' => ['moodle/link' => '/etc/passwd']], 'symbolic link'],
             'config.php' => [['extra' => ['moodle/config.php' => '<?php // source config']], 'config.php'],
             'overwriting the installer' => [['extra' => ['moodle/installer.php' => '<?php // evil']], 'overwrite the installer'],
-            'overwriting the auth state' => [['extra' => ['moodle/moodleclone-installer-auth.php' => '{}']], 'overwrite the installer'],
+            'overwriting the auth state' => [
+                ['extra' => ['moodle/moodleclone-installer-auth.php' => '{}']],
+                'overwrite the installer',
+            ],
             'a file at the top level' => [['extra' => ['evil.php' => 'x']], 'Unexpected entry'],
-            'tampered manifest counts' => [['manifest' => function(array $m) {
+            'tampered manifest counts' => [['manifest' => function (array $m) {
                 $m['statistics']['moodle']['files'] = 999;
                 return $m;
             }], 'does not match manifest.json'],
-            'a checksum line missing' => [['checksums' => function(array $lines) {
+            'a checksum line missing' => [['checksums' => function (array $lines) {
                 array_pop($lines);
                 return $lines;
             }], 'checksums.sha256'],
-            'checksum lines in the wrong order' => [['checksums' => function(array $lines) {
+            'checksum lines in the wrong order' => [['checksums' => function (array $lines) {
                 return array_reverse($lines);
             }], 'checksums.sha256'],
-            'a checksum for something not in the archive' => [['checksums' => function(array $lines) {
+            'a checksum for something not in the archive' => [['checksums' => function (array $lines) {
                 $lines[] = str_repeat('a', 64) . '  moodle/ghost.php';
                 return $lines;
             }], 'checksums.sha256'],
-            'a secret in the manifest' => [['manifest' => function(array $m) {
+            'a secret in the manifest' => [['manifest' => function (array $m) {
                 $m['generator']['secret'] = 'x';
                 return $m;
             }], 'forbidden key'],
-            'a partial package' => [['manifest' => function(array $m) {
+            'a partial package' => [['manifest' => function (array $m) {
                 $m['package_contents']['database'] = false;
                 return $m;
             }], 'only complete packages'],
@@ -136,6 +144,8 @@ class installer_security_test extends \basic_testcase {
     }
 
     /**
+     * A hostile package is refused with the expected message.
+     *
      * @dataProvider hostile_package_provider
      * @param array $options
      * @param string $message
@@ -190,19 +200,28 @@ class installer_security_test extends \basic_testcase {
         $this->assertSame('set', $guard->check('SET NAMES utf8mb4')['type']);
         $this->assertSame('set', $guard->check("SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO'")['type']);
         $this->assertSame('mdl_user', $guard->check('DROP TABLE IF EXISTS `mdl_user`')['table']);
-        $this->assertSame('create', $guard->check("CREATE TABLE `mdl_user` (\n  `id` bigint NOT NULL AUTO_INCREMENT,\n  PRIMARY KEY (`id`)\n) " .
-            "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED COMMENT='a;b'")['type']);
-        $insert = $guard->check("INSERT INTO `mdl_user` (`id`,`name`,`data`,`amount`) VALUES (1,_utf8mb4 X'6162',X'00ff',-1.5e-7),(2,NULL,X'',0)");
+        $this->assertSame('create', $guard->check(
+            "CREATE TABLE `mdl_user` (\n  `id` bigint NOT NULL AUTO_INCREMENT,\n  PRIMARY KEY (`id`)\n) " .
+            "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED COMMENT='a;b'"
+        )['type']);
+        $insert = $guard->check(
+            "INSERT INTO `mdl_user` (`id`,`name`,`data`,`amount`) VALUES (1,_utf8mb4 X'6162',X'00ff',-1.5e-7),(2,NULL,X'',0)"
+        );
         $this->assertSame('insert', $insert['type']);
         $this->assertSame(2, $insert['rows']);
-        $this->assertSame(1, $guard->check("INSERT INTO `mdl_x` (`a`) VALUES (_utf8mb4 X'" . str_repeat('ab', 3000000) . "')")['rows'],
-            'a 6 MB literal (no PCRE limits)');
+        $this->assertSame(
+            1,
+            $guard->check("INSERT INTO `mdl_x` (`a`) VALUES (_utf8mb4 X'" . str_repeat('ab', 3000000) . "')")['rows'],
+            'a 6 MB literal (no PCRE limits)'
+        );
     }
 
     /**
+     * SQL statements that the guard must refuse.
+     *
      * @return array
      */
-    public function hostile_sql_provider(): array {
+    public static function hostile_sql_provider(): array {
         return [
             'drop database' => ['DROP DATABASE school'],
             'function call in values' => ["INSERT INTO `mdl_user` (`id`) VALUES (LOAD_FILE('/etc/passwd'))"],
@@ -221,6 +240,8 @@ class installer_security_test extends \basic_testcase {
     }
 
     /**
+     * The guard refuses everything except the dump's own statements.
+     *
      * @dataProvider hostile_sql_provider
      * @param string $sql
      */
@@ -233,9 +254,12 @@ class installer_security_test extends \basic_testcase {
 
     public function test_the_reader_splits_on_semicolons_outside_quotes_and_resumes(): void {
         $file = $this->dir . '/dump.sql';
-        file_put_contents($file, "-- header\nSET NAMES utf8mb4;\n\n-- Table: `mdl_a`\nCREATE TABLE `mdl_a` (\n  `id` int COMMENT 'x;\ny',\n" .
+        file_put_contents(
+            $file,
+            "-- header\nSET NAMES utf8mb4;\n\n-- Table: `mdl_a`\nCREATE TABLE `mdl_a` (\n  `id` int COMMENT 'x;\ny',\n" .
             "  `b` text\n) ENGINE=InnoDB COMMENT='semi;colon';\nINSERT INTO `mdl_a` (`id`) VALUES (1);\n" .
-            "-- Moodle Clone dump completed: 1 tables, 1 rows\n");
+            "-- Moodle Clone dump completed: 1 tables, 1 rows\n"
+        );
         $reader = new sql_reader($file, 0);
         $out = [];
         while (($statement = $reader->next()) !== null) {
@@ -263,14 +287,29 @@ class installer_security_test extends \basic_testcase {
     public function test_urls_are_rewritten_safely(): void {
         $old = 'http://school.local.com';
         $new = 'http://clone-test.local.com';
-        $this->assertSame("<a href=\"{$new}/course/view.php?id=2\">x</a>",
-            moodle_steps::replace_value("<a href=\"{$old}/course/view.php?id=2\">x</a>", $old, $new));
-        $result = moodle_steps::replace_value(serialize(['url' => "{$old}/mod/page", 'n' => 5, 'nested' => ["{$old}/x" => 'k']]), $old, $new);
-        $this->assertSame(['url' => "{$new}/mod/page", 'n' => 5, 'nested' => ["{$new}/x" => 'k']], unserialize($result),
-            'serialized string lengths are fixed');
-        $this->assertNull(moodle_steps::replace_value(serialize((object) ['u' => "{$old}/x"]), $old, $new), 'objects are left alone');
-        $this->assertSame('{"u":"http:\/\/clone-test.local.com\/x"}', moodle_steps::replace_value('{"u":"http:\/\/school.local.com\/x"}',
-            'http:\/\/school.local.com', 'http:\/\/clone-test.local.com'));
+        $this->assertSame(
+            "<a href=\"{$new}/course/view.php?id=2\">x</a>",
+            moodle_steps::replace_value("<a href=\"{$old}/course/view.php?id=2\">x</a>", $old, $new)
+        );
+        $result = moodle_steps::replace_value(
+            serialize(['url' => "{$old}/mod/page", 'n' => 5, 'nested' => ["{$old}/x" => 'k']]),
+            $old,
+            $new
+        );
+        $this->assertSame(
+            ['url' => "{$new}/mod/page", 'n' => 5, 'nested' => ["{$new}/x" => 'k']],
+            unserialize($result),
+            'serialized string lengths are fixed'
+        );
+        $this->assertNull(
+            moodle_steps::replace_value(serialize((object) ['u' => "{$old}/x"]), $old, $new),
+            'objects are left alone'
+        );
+        $this->assertSame('{"u":"http:\/\/clone-test.local.com\/x"}', moodle_steps::replace_value(
+            '{"u":"http:\/\/school.local.com\/x"}',
+            'http:\/\/school.local.com',
+            'http:\/\/clone-test.local.com'
+        ));
         $this->assertSame("s:not serialized {$new}", moodle_steps::replace_value("s:not serialized {$old}", $old, $new));
     }
 
@@ -302,7 +341,13 @@ class installer_security_test extends \basic_testcase {
         $bad['other'] = ['salt' => 'x'];
         $this->assertNotEmpty(manifest_check::validate($bad), 'a salt outside installer_auth');
         $bad = $valid;
-        $bad['installer_auth'] = ['mode' => 'password', 'kdf' => 'pbkdf2-sha256', 'iterations' => 600000, 'salt' => 'x', 'verifier' => 'y'];
+        $bad['installer_auth'] = [
+            'mode' => 'password',
+            'kdf' => 'pbkdf2-sha256',
+            'iterations' => 600000,
+            'salt' => 'x',
+            'verifier' => 'y',
+        ];
         $this->assertNotEmpty(manifest_check::validate($bad), 'a malformed verifier');
     }
 }

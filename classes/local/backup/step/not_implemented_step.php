@@ -26,7 +26,6 @@ use tool_moodleclone\local\backup\backup_state;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class not_implemented_step implements step {
-
     /**
      * Not available until implemented.
      *

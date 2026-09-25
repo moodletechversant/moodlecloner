@@ -34,7 +34,6 @@ require_once(__DIR__ . '/../../../fixtures/fixture_helper.php');
  * @covers     \tool_moodleclone\local\backup\step\tree_collector
  */
 class code_collector_test extends \advanced_testcase {
-
     /**
      * Collect a fixture code tree and return archive names and checksum lines.
      *

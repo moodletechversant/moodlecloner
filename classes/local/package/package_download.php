@@ -32,7 +32,6 @@ use tool_moodleclone\local\job\job;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class package_download {
-
     /**
      * Path of a downloadable package.
      *

@@ -35,7 +35,6 @@ use tool_moodleclone\local\package\workspace;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class queue {
-
     /** @var string Lock resource guarding job creation. */
     public const LOCK_RESOURCE = 'queue';
 
@@ -122,8 +121,13 @@ class queue {
         if (job::change_status($jobid, job::STATUS_PENDING, job::STATUS_CANCELLED, ['timefinished' => time()])) {
             self::discard_installer_verifier($jobid, (new job($jobid))->get_backup_options());
         } else {
-            $DB->set_field_select(job::TABLE, 'cancelrequested', 1, 'id = :id AND status = :running',
-                ['id' => $jobid, 'running' => job::STATUS_RUNNING]);
+            $DB->set_field_select(
+                job::TABLE,
+                'cancelrequested',
+                1,
+                'id = :id AND status = :running',
+                ['id' => $jobid, 'running' => job::STATUS_RUNNING]
+            );
         }
         return (string) $DB->get_field(job::TABLE, 'status', ['id' => $jobid]);
     }

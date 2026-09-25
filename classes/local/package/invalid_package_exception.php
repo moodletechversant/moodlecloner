@@ -24,7 +24,6 @@ namespace tool_moodleclone\local\package;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class invalid_package_exception extends \moodle_exception {
-
     /** @var string[] Individual validation problems. */
     public $errors;
 

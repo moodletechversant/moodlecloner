@@ -32,7 +32,6 @@ namespace tool_moodleclone\local\package;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class manifest_validator {
-
     /** @var string[] Top-level key => expected type ("int", "string", "?string", "array", "?array"). */
     public const FIELDS = [
         'format' => 'int',
@@ -144,8 +143,10 @@ class manifest_validator {
         $errors = array_merge($errors, $contentserrors);
         if (!$contentserrors) {
             $errors = array_merge($errors, self::validate_statistics($data['statistics'], $data['package_contents']));
-            $errors = array_merge($errors, self::validate_database_dump($data['database_dump'],
-                $data['package_contents'][manifest::CONTENT_DATABASE]));
+            $errors = array_merge($errors, self::validate_database_dump(
+                $data['database_dump'],
+                $data['package_contents'][manifest::CONTENT_DATABASE]
+            ));
         }
 
         if (array_values($data['moodledata_excluded']) !== $data['moodledata_excluded']) {

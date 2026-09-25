@@ -24,7 +24,6 @@ namespace tool_moodleclone\local\package;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class zip_entry_stream {
-
     /** @var zip_writer|null Null once closed. */
     private $writer;
 

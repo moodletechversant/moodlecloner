@@ -36,7 +36,6 @@ use tool_moodleclone\local\package\workspace;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class preflight {
-
     /** @var string Check passed. */
     public const OK = 'ok';
 
@@ -77,8 +76,14 @@ class preflight {
      * @param array|null $database Table summary (engines); taken from $estimate when omitted.
      * @param string|null $workspacebase
      */
-    public function __construct(snapshot $snapshot, manager $manager, ?array $estimate = null, ?options $options = null,
-            ?array $database = null, ?string $workspacebase = null) {
+    public function __construct(
+        snapshot $snapshot,
+        manager $manager,
+        ?array $estimate = null,
+        ?options $options = null,
+        ?array $database = null,
+        ?string $workspacebase = null
+    ) {
         $this->snapshot = $snapshot;
         $this->manager = $manager;
         $this->estimate = $estimate;
@@ -142,7 +147,7 @@ class preflight {
      * @return string[]
      */
     public static function get_errors(array $results): array {
-        return array_column(array_filter($results, function(array $r) {
+        return array_column(array_filter($results, function (array $r) {
             return $r['status'] === self::ERROR;
         }), 'message');
     }
@@ -155,8 +160,11 @@ class preflight {
     private function check_extensions(): array {
         $missing = $this->snapshot->get_missing_extensions(collector::get_required_extensions($this->snapshot->dbtype));
         if ($missing) {
-            return $this->result('extensions', self::ERROR,
-                get_string('check:extensions_missing', 'tool_moodleclone', implode(', ', $missing)));
+            return $this->result(
+                'extensions',
+                self::ERROR,
+                get_string('check:extensions_missing', 'tool_moodleclone', implode(', ', $missing))
+            );
         }
         return $this->result('extensions', self::OK, get_string('check:extensions_ok', 'tool_moodleclone'));
     }
@@ -182,15 +190,24 @@ class preflight {
      */
     private function check_database(): array {
         if ($this->snapshot->dbfamily !== 'mysql') {
-            return $this->result('database', self::ERROR,
-                get_string('check:database_unsupported', 'tool_moodleclone', $this->snapshot->dbtype));
+            return $this->result(
+                'database',
+                self::ERROR,
+                get_string('check:database_unsupported', 'tool_moodleclone', $this->snapshot->dbtype)
+            );
         }
         if (!in_array($this->snapshot->dbtype, self::TESTED_DRIVERS, true)) {
-            return $this->result('database', self::WARNING,
-                get_string('check:database_untested', 'tool_moodleclone', $this->snapshot->dbtype));
+            return $this->result(
+                'database',
+                self::WARNING,
+                get_string('check:database_untested', 'tool_moodleclone', $this->snapshot->dbtype)
+            );
         }
-        return $this->result('database', self::OK, get_string('check:database_ok', 'tool_moodleclone',
-            $this->snapshot->dbtype . ' ' . ($this->snapshot->dbversion ?? '')));
+        return $this->result('database', self::OK, get_string(
+            'check:database_ok',
+            'tool_moodleclone',
+            $this->snapshot->dbtype . ' ' . ($this->snapshot->dbversion ?? '')
+        ));
     }
 
     /**
@@ -200,11 +217,17 @@ class preflight {
      */
     private function check_engines(): array {
         if (!empty($this->database['nontransactional'])) {
-            return $this->result('engines', self::ERROR, get_string('check:engines_bad', 'tool_moodleclone',
-                implode(', ', array_slice($this->database['nontransactional'], 0, 10))));
+            return $this->result('engines', self::ERROR, get_string(
+                'check:engines_bad',
+                'tool_moodleclone',
+                implode(', ', array_slice($this->database['nontransactional'], 0, 10))
+            ));
         }
-        return $this->result('engines', self::OK,
-            get_string('check:engines_ok', 'tool_moodleclone', (int) $this->database['tables']));
+        return $this->result(
+            'engines',
+            self::OK,
+            get_string('check:engines_ok', 'tool_moodleclone', (int) $this->database['tables'])
+        );
     }
 
     /**
@@ -242,8 +265,11 @@ class preflight {
         if ($this->snapshot->freediskspace === null) {
             return $this->result('diskspace', self::WARNING, get_string('check:diskspace_unknown', 'tool_moodleclone'));
         }
-        return $this->result('diskspace', self::OK,
-            get_string('check:diskspace', 'tool_moodleclone', display_size($this->snapshot->freediskspace)));
+        return $this->result(
+            'diskspace',
+            self::OK,
+            get_string('check:diskspace', 'tool_moodleclone', display_size($this->snapshot->freediskspace))
+        );
     }
 
     /**
@@ -255,8 +281,11 @@ class preflight {
         $unavailable = $this->manager->get_unavailable_stages();
         if ($unavailable) {
             $labels = array_map([stage::class, 'get_label'], $unavailable);
-            return $this->result('pipeline', self::ERROR,
-                get_string('check:pipeline_incomplete', 'tool_moodleclone', implode(', ', $labels)));
+            return $this->result(
+                'pipeline',
+                self::ERROR,
+                get_string('check:pipeline_incomplete', 'tool_moodleclone', implode(', ', $labels))
+            );
         }
         return $this->result('pipeline', self::OK, get_string('check:pipeline_ok', 'tool_moodleclone'));
     }
